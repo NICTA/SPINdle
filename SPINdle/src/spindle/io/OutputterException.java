@@ -28,7 +28,8 @@ import spindle.core.SpindleException;
  * 
  * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
  * @since version 1.0.0
- */
+ * @version Last modified 2011.07.27
+*/
 public class OutputterException extends SpindleException {
 
 	private static final long serialVersionUID = 1L;

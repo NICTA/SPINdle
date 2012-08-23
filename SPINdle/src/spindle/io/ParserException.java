@@ -27,8 +27,8 @@ import spindle.core.SpindleException;
  * Signals that an attempt of parsing the deafeasible theory or conclusions saved has failed.
  * 
  * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
- * @version Last modified 2011.07.27
  * @since version 1.0.0
+ * @version Last modified 2011.07.27
  */
 public class ParserException extends SpindleException {
 

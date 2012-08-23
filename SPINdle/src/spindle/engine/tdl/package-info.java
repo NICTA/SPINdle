@@ -23,7 +23,7 @@
  * (Under development)
  * Provides theory normalizer and reasoning engine classes to support Temporal Defeasible Reasoning (TDL).
  * 
- * @version Last modified 2011.07.27
- * @since version 1.0.0
+ * @since version 2.2.1
+ * @version Last modified 2012.08.20
  */
 package spindle.engine.tdl;

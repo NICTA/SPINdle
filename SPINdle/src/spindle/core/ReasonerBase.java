@@ -112,7 +112,7 @@ public abstract class ReasonerBase extends AppModuleBase //
 					SystemMessage.REASONER_THEORY_LOADED_SUCCESSFULLY, new Object[] { workingTheory.getTheoryType()
 							.name() }));
 
-			if (Conf.isShowProgress()) fireOnReasonerMessage(MessageType.INFO, "Theory read:", workingTheory);
+			if (Conf.isShowProgress()) fireOnReasonerMessage(MessageType.INFO, "Theory read:\n", workingTheory);
 
 			return ProcessStatus.SUCCESS;
 		} catch (Exception e) {

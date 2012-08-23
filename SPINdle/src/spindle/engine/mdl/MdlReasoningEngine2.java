@@ -38,6 +38,13 @@ import spindle.engine.sdl.SdlReasoningEngine2;
 import spindle.sys.AppConst;
 import spindle.tools.explanation.RuleInferenceStatus;
 
+/**
+ * MDL Reasoning Engine (version 2).
+ * 
+ * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
+ * @since version 1.0.0
+ * @version Last modified 2012.08.20
+ */
 public class MdlReasoningEngine2 extends SdlReasoningEngine2 {
 	protected Map<String, Set<String>> strongerModeSet = null;
 
@@ -131,7 +138,6 @@ public class MdlReasoningEngine2 extends SdlReasoningEngine2 {
 		removeComplementLiteralAmbiguity(i);
 
 		// remove ambiguity based on modal operator strength
-		// for (Conclusion conclusion : ambiguousConclusions[i].keySet()) {
 		for (Entry<Conclusion, Set<String>> entry : ambiguousConclusions[i].entrySet()) {
 			Conclusion conclusion = entry.getKey();
 			Set<String> ruleLabels = entry.getValue();

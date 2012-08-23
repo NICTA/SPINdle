@@ -44,6 +44,13 @@ import spindle.engine.ReasoningEngineException;
 import spindle.sys.AppConst;
 import spindle.tools.explanation.RuleInferenceStatus;
 
+/**
+ * MDL Reasoning Engine with ambiguity propagation (version 2).
+ * 
+ * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
+ * @since version 1.0.0
+ * @version Last modified 2012.08.20
+ */
 public class MdlReasoningEngineAP2 extends MdlReasoningEngine2 {
 
 	public MdlReasoningEngineAP2() {

@@ -33,6 +33,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.app.utils.Utilities.ProcessStatus;
 
@@ -52,7 +53,7 @@ public class Theory extends TheoryCore implements Cloneable {
 
 	public static final String DEFAULT_RULE_LABEL_PREFIX = "Rule_";
 	public static final DecimalFormat formatter = new DecimalFormat("00000");
-	private Map<String, Integer> rulesCounter = null;
+	private Map<String, AtomicLong> ruleLabelCounters;
 
 	private final Map<String, Set<String>> strongerModeSet = new TreeMap<String, Set<String>>();
 	private final Map<String, Set<String>> allModeConflictRulesResolved = new TreeMap<String, Set<String>>();
@@ -66,8 +67,7 @@ public class Theory extends TheoryCore implements Cloneable {
 
 	public Theory(Theory theory) {
 		super(theory);
-		rulesCounter = new HashMap<String, Integer>();
-		rulesCounter.put(DEFAULT_RULE_LABEL_PREFIX, 0);
+		ruleLabelCounters = new HashMap<String, AtomicLong>();
 		conflictLiteralsStore = new TreeMap<Literal, List<Literal>>();
 	}
 
@@ -97,12 +97,15 @@ public class Theory extends TheoryCore implements Cloneable {
 	 * @see #getUniqueRuleLabel()
 	 */
 	public String getUniqueRuleLabel(final String prefix) {
+		AtomicLong ruleLabelCounter = ruleLabelCounters.get(prefix);
+		if (null == ruleLabelCounter) {
+			ruleLabelCounter = new AtomicLong();
+			ruleLabelCounters.put(prefix, ruleLabelCounter);
+		}
 		String id;
-		int ruleCounter = (rulesCounter.containsKey(prefix) ? rulesCounter.get(prefix) : 0);
 		do {
-			id = DEFAULT_RULE_LABEL_PREFIX + formatter.format(ruleCounter++);
+			id = prefix + formatter.format(ruleLabelCounter.getAndIncrement());
 		} while (factsAndAllRules.containsKey(id));
-		rulesCounter.put(prefix, ruleCounter);
 		return id;
 	}
 
@@ -149,9 +152,9 @@ public class Theory extends TheoryCore implements Cloneable {
 		}
 	}
 
-	
 	/**
 	 * Update the superior rules and inference rules counters of each rules.
+	 * 
 	 * @throws TheoryException
 	 */
 	public void updateRuleSuperiorityRelationCounter() throws TheoryException {
@@ -160,13 +163,15 @@ public class Theory extends TheoryCore implements Cloneable {
 		case 2:
 			for (Entry<String, Set<Superiority>> entry : superiors.entrySet()) {
 				RuleExt superiorRule = (RuleExt) factsAndAllRules.get(entry.getKey());
-				if (null == superiorRule) throw new RuleException(ErrorMessage.SUPERIORITY_SUPERIOR_RULE_NOT_DEFINED,
-						new Object[] { entry.getKey() });
+				if (null == superiorRule)
+					throw new RuleException(ErrorMessage.SUPERIORITY_SUPERIOR_RULE_NOT_DEFINED,
+							new Object[] { entry.getKey() });
 				superiorRule.resetRuleSuperiorityRelationCounter();
 				for (Superiority sup : entry.getValue()) {
 					RuleExt inferiorRule = (RuleExt) factsAndAllRules.get(sup.getInferior());
-					if (null == inferiorRule) throw new RuleException(
-							ErrorMessage.SUPERIORITY_INFERIOR_RULE_NOT_DEFINED, new Object[] { sup.getInferior() });
+					if (null == inferiorRule)
+						throw new RuleException(ErrorMessage.SUPERIORITY_INFERIOR_RULE_NOT_DEFINED,
+								new Object[] { sup.getInferior() });
 					inferiorRule.resetRuleSuperiorityRelationCounter();
 				}
 			}
@@ -213,8 +218,9 @@ public class Theory extends TheoryCore implements Cloneable {
 					if (null == supRules) {
 						supRules = new ArrayList<Rule>();
 						Rule r = factsAndAllRules.get(supLabel);
-						if (null == r) throw new TheoryException(ErrorMessage.SUPERIORITY_SUPERIOR_RULE_NOT_DEFINED,
-								new Object[] { supLabel });
+						if (null == r)
+							throw new TheoryException(ErrorMessage.SUPERIORITY_SUPERIOR_RULE_NOT_DEFINED,
+									new Object[] { supLabel });
 						supRules.add(r);
 					} else {
 						if (!supToDelete.contains(origSuperiority)) supToDelete.add(origSuperiority);
@@ -224,18 +230,16 @@ public class Theory extends TheoryCore implements Cloneable {
 					if (null == infRules) {
 						infRules = new ArrayList<Rule>();
 						Rule r = factsAndAllRules.get(infLabel);
-						if (null == r) throw new TheoryException(ErrorMessage.SUPERIORITY_INFERIOR_RULE_NOT_DEFINED,
-								new Object[] { infLabel });
+						if (null == r)
+							throw new TheoryException(ErrorMessage.SUPERIORITY_INFERIOR_RULE_NOT_DEFINED,
+									new Object[] { infLabel });
 						infRules.add(r);
 					} else {
 						if (!supToDelete.contains(origSuperiority)) supToDelete.add(origSuperiority);
 					}
 
 					for (Rule newSupRule : supRules) {
-						System.out.println(newSupRule.toString());
 						for (Rule inferiorRule : infRules) {
-							System.out.println("  "+inferiorRule);
-							System.out.println("    "+newSupRule.isConflictRule(inferiorRule));
 							if (newSupRule.isConflictRule(inferiorRule)) {
 								supToAdd.add(new Superiority(newSupRule.getLabel(), inferiorRule.getLabel()));
 							}
@@ -252,17 +256,30 @@ public class Theory extends TheoryCore implements Cloneable {
 		return ProcessStatus.SUCCESS;
 	}
 
-	public boolean containsUnprovedRule(final Literal literal, final RuleType ruleType) {
+	public boolean containsUnprovedRule(final Literal literal, final RuleType ruleType, boolean checkEmptyBody) {
 		Map<String, Rule> rules = getRules(literal);
 		if (null == rules || rules.size() == 0) return false; // literal does not appear in theory
 
 		if (null == ruleType) {
-			for (Rule rule : rules.values()) {
-				if (!rule.isEmptyBody() && rule.isHeadLiteral(literal)) return true;
+			if (checkEmptyBody) {
+				for (Rule rule : rules.values()) {
+					if (!rule.isEmptyBody() && rule.isHeadLiteral(literal)) return true;
+				}
+			} else {
+				for (Rule rule : rules.values()) {
+					if (rule.isHeadLiteral(literal)) return true;
+				}
 			}
 		} else {
-			for (Rule rule : rules.values()) {
-				if (ruleType == rule.getRuleType() && !rule.isEmptyBody() && rule.isHeadLiteral(literal)) return true;
+			if (checkEmptyBody) {
+				for (Rule rule : rules.values()) {
+					if (ruleType == rule.getRuleType() && rule.isEmptyBody() && rule.isHeadLiteral(literal))
+						return true;
+				}
+			} else {
+				for (Rule rule : rules.values()) {
+					if (ruleType == rule.getRuleType() && rule.isHeadLiteral(literal)) return true;
+				}
 			}
 		}
 		return false;
@@ -426,9 +443,9 @@ public class Theory extends TheoryCore implements Cloneable {
 					Literal conflictLiteral = literalComplement.clone();
 					conflictLiteral.setMode(new Mode(modeStr, literalMode.isNegation()));
 					conflictLiterals.add(conflictLiteral);
-					
-					Literal conflictLiteral2=literal.clone();
-					conflictLiteral2.setMode(new Mode(modeStr,!literalMode.isNegation()));
+
+					Literal conflictLiteral2 = literal.clone();
+					conflictLiteral2.setMode(new Mode(modeStr, !literalMode.isNegation()));
 					conflictLiterals.add(conflictLiteral2);
 				}
 			}

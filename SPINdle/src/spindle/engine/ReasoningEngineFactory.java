@@ -47,7 +47,7 @@ public final class ReasoningEngineFactory {
 	};
 
 	private static LiteralVariablesEvaluator literalVariableEvaluator = null;
-	private static Map<TheoryType, TheoryNormalizer> theoryNormalizersStore = new TreeMap<TheoryType, TheoryNormalizer>();
+	private static Map<TheoryType, Map<Integer, TheoryNormalizer>> theoryNormalizersStore = new TreeMap<TheoryType, Map<Integer, TheoryNormalizer>>();
 	private static Map<TheoryType, Map<ENGINE_TYPE, Map<Integer, ReasoningEngine>>> reasoningEnginesStore = new TreeMap<TheoryType, Map<ENGINE_TYPE, Map<Integer, ReasoningEngine>>>();
 
 	/**
@@ -62,31 +62,32 @@ public final class ReasoningEngineFactory {
 	}
 
 	/**
-	 * Create a new theory normalizer according to the theory type.
+	 * Create a new theory normalizer according to the theory type and reasoner version.
 	 * 
-	 * @param theoryType theory type
+	 * @param theoryType theory type.
+	 * @param reasonerVersion reasoner version.
 	 * @return theory normalizer associated with the theory type
 	 * @throws ReasoningEngineFactoryException Indicates when there is no theory normalizer associated with the theory
 	 *             type specified or the theory type does not exist.
 	 */
-	private static final TheoryNormalizer createTheoryNormalizer(TheoryType theoryType)
+	private static final TheoryNormalizer createTheoryNormalizer(TheoryType theoryType, int reasonerVersion)
 			throws ReasoningEngineFactoryException {
 		TheoryNormalizer theoryNormalizer = null;
 		switch (theoryType) {
 		case SDL:
-			switch (Conf.getReasonerVersion()){
+			switch (reasonerVersion) {
 			case 1:
-			theoryNormalizer = new spindle.engine.sdl.SdlTheoryNormalizer();
-			break;
+				theoryNormalizer = new spindle.engine.sdl.SdlTheoryNormalizer();
+				break;
 			default:
 				theoryNormalizer = new spindle.engine.sdl.SdlTheoryNormalizer2();
 			}
 			break;
 		case MDL:
-			switch (Conf.getReasonerVersion()){
+			switch (reasonerVersion) {
 			case 1:
-			theoryNormalizer = new spindle.engine.mdl.MdlTheoryNormalizer();
-			break;
+				theoryNormalizer = new spindle.engine.mdl.MdlTheoryNormalizer();
+				break;
 			default:
 				theoryNormalizer = new spindle.engine.mdl.MdlTheoryNormalizer2();
 			}
@@ -94,12 +95,18 @@ public final class ReasoningEngineFactory {
 		case TDL:
 			// only available when the package is not in deploy mode
 			// - used for testing purpose
-			if (!AppConst.isDeploy) {
-				theoryNormalizer = new spindle.engine.tdl.TdlTheoryNormalizer();
+			if (AppConst.isDeploy)
+				throw new ReasoningEngineFactoryException(ErrorMessage.THEORY_NORMALIZER_NOT_SUPPORTED,
+						new Object[] { TheoryType.TDL });
+			try {
+				theoryNormalizer = new spindle.engine.tdl.TdlTheoryNormalizer2();
+			} catch (TheoryNormalizerException e) {
+				throw new ReasoningEngineFactoryException(e);
 			}
 			break;
 		default:
-			throw new ReasoningEngineFactoryException(ErrorMessage.THEORY_UNRECOGNIZED_THEORY_TYPE);
+			throw new ReasoningEngineFactoryException(ErrorMessage.THEORY_UNRECOGNIZED_THEORY_TYPE,
+					new Object[] { theoryType });
 		}
 		return theoryNormalizer;
 	}
@@ -108,17 +115,23 @@ public final class ReasoningEngineFactory {
 	 * Return a theory normalizer as specified if the type of theory normalizer is in the theory normalizers store.
 	 * or create a new one otherwise.
 	 * 
-	 * @param theoryType theory type
+	 * @param theoryType theory type.
+	 * @param reasonerVersion reasoner version.
 	 * @return theory normalizer associated with the theory type
 	 * @throws ReasoningEngineFactoryException Indicates when there is no theory normalizer associated with the theory
 	 *             type specified or the theory type does not exist.
 	 */
-	private static final TheoryNormalizer getTheoryNormalizerFromStore(TheoryType theoryType)
+	private static final TheoryNormalizer getTheoryNormalizerFromStore(TheoryType theoryType, int reasonerVersion)
 			throws ReasoningEngineFactoryException {
-		TheoryNormalizer theoryNormalizer = theoryNormalizersStore.get(theoryType);
+		Map<Integer, TheoryNormalizer> theoryNormalizers = theoryNormalizersStore.get(theoryType);
+		if (null == theoryNormalizers) {
+			theoryNormalizers = new TreeMap<Integer, TheoryNormalizer>();
+			theoryNormalizersStore.put(theoryType, theoryNormalizers);
+		}
+		TheoryNormalizer theoryNormalizer = theoryNormalizers.get(reasonerVersion);
 		if (null == theoryNormalizer) {
-			theoryNormalizer = createTheoryNormalizer(theoryType);
-			theoryNormalizersStore.put(theoryType, theoryNormalizer);
+			theoryNormalizer = createTheoryNormalizer(theoryType, reasonerVersion);
+			theoryNormalizers.put(reasonerVersion, theoryNormalizer);
 		}
 		return theoryNormalizer;
 	}
@@ -135,9 +148,9 @@ public final class ReasoningEngineFactory {
 			throws ReasoningEngineFactoryException {
 		if (theoryType == null) return null;
 		if (Conf.isMultiThreadMode()) {
-			return createTheoryNormalizer(theoryType);
+			return createTheoryNormalizer(theoryType, Conf.getReasonerVersion());
 		} else {
-			return getTheoryNormalizerFromStore(theoryType);
+			return getTheoryNormalizerFromStore(theoryType, Conf.getReasonerVersion());
 		}
 	}
 
@@ -210,7 +223,13 @@ public final class ReasoningEngineFactory {
 			}
 			break;
 		case TDL: // TDL support only available in version 2 onward
-			engine = new spindle.engine.tdl.TdlReasoningEngine2();
+			if (!AppConst.isDeploy) {
+				try {
+					engine = new spindle.engine.tdl.TdlReasoningEngine2();
+				} catch (ReasoningEngineException e) {
+					throw new ReasoningEngineFactoryException(e);
+				}
+			}
 			break;
 		default:
 			throw new ReasoningEngineFactoryException(ErrorMessage.THEORY_UNRECOGNIZED_THEORY_TYPE);

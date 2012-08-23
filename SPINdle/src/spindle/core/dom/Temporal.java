@@ -74,8 +74,8 @@ public class Temporal implements Comparable<Object>, Cloneable, Serializable {
 	}
 
 	public void setEndTime(long endTime) {
-		if (startTime > endTime) throw new IllegalArgumentException(
-				Messages.getErrorMessage(ErrorMessage.TEMPORAL_STARTTIME_ENDTIME));
+		if (startTime > endTime)
+			throw new IllegalArgumentException(Messages.getErrorMessage(ErrorMessage.TEMPORAL_STARTTIME_ENDTIME));
 		this.endTime = endTime;
 	}
 
@@ -90,6 +90,14 @@ public class Temporal implements Comparable<Object>, Cloneable, Serializable {
 	 */
 	public boolean isTimeInstance() {
 		return startTime == endTime;
+	}
+
+	public boolean equalsStartTime(Temporal temporal) {
+		return startTime == temporal.startTime;
+	}
+
+	public boolean equalsEndTime(Temporal temporal) {
+		return endTime == temporal.endTime;
 	}
 
 	/**
@@ -123,8 +131,8 @@ public class Temporal implements Comparable<Object>, Cloneable, Serializable {
 	 * @throws TemporalException If the two temporals are not intersect with each other.
 	 */
 	public Temporal getUnion(Temporal temporal) throws TemporalException {
-		if (!intersect(temporal)) throw new TemporalException(ErrorMessage.TEMPORAL_NOT_INTERSECTED, new Object[] {
-				this, temporal });
+		if (!intersect(temporal))
+			throw new TemporalException(ErrorMessage.TEMPORAL_NOT_INTERSECTED, new Object[] { this, temporal });
 		long st = startTime > temporal.startTime ? temporal.startTime : startTime;
 		long et = endTime > temporal.endTime ? endTime : temporal.endTime;
 		return new Temporal(st, et);
@@ -138,8 +146,8 @@ public class Temporal implements Comparable<Object>, Cloneable, Serializable {
 	 * @throws TemporalException If the two temporals are not intersect with each other.
 	 */
 	public Temporal getIntersection(Temporal temporal) throws TemporalException {
-		if (!intersect(temporal)) throw new TemporalException(ErrorMessage.TEMPORAL_NOT_INTERSECTED, new Object[] {
-				this, temporal });
+		if (!intersect(temporal))
+			throw new TemporalException(ErrorMessage.TEMPORAL_NOT_INTERSECTED, new Object[] { this, temporal });
 		long st = startTime > temporal.startTime ? startTime : temporal.startTime;
 		long et = endTime > temporal.endTime ? temporal.endTime : endTime;
 		return new Temporal(st, et);
@@ -151,8 +159,8 @@ public class Temporal implements Comparable<Object>, Cloneable, Serializable {
 	 * @throws TemporalException If the two temporals are not intersect with each other.
 	 */
 	public List<Temporal> getTimeSegments(Temporal temporal) throws TemporalException {
-		if (!intersect(temporal)) throw new TemporalException(ErrorMessage.TEMPORAL_NOT_INTERSECTED, new Object[] {
-				this, temporal });
+		if (!intersect(temporal))
+			throw new TemporalException(ErrorMessage.TEMPORAL_NOT_INTERSECTED, new Object[] { this, temporal });
 		List<Temporal> segments = new ArrayList<Temporal>();
 
 		if (isTimeInstance() && temporal.isTimeInstance()) {
@@ -209,18 +217,10 @@ public class Temporal implements Comparable<Object>, Cloneable, Serializable {
 	}
 
 	@Override
-	public String toString() {
-		if (startTime == Long.MIN_VALUE && endTime == Long.MAX_VALUE) return "";
-		StringBuilder sb = new StringBuilder();
-		sb.append(TEMPORAL_START).append(startTime).append(TEMPORAL_SEPARATOR).append(endTime).append(TEMPORAL_END);
-		return sb.toString();
-	}
-
-	@Override
-	public int compareTo(Object obj) {
-		if (this == obj) return 0;
-		if (!(obj instanceof Temporal)) return getClass().getName().compareTo(obj.getClass().getName());
-		Temporal t = (Temporal) obj;
+	public int compareTo(Object o) {
+		if (this == o) return 0;
+		if (!(o instanceof Temporal)) return getClass().getName().compareTo(o.getClass().getName());
+		Temporal t = (Temporal) o;
 		if (startTime != t.startTime) return startTime < t.startTime ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 		if (endTime != t.endTime) return endTime < t.endTime ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 		return 0;
@@ -240,10 +240,17 @@ public class Temporal implements Comparable<Object>, Cloneable, Serializable {
 		if (this == obj) return true;
 		if (null == obj) return false;
 		if (getClass() != obj.getClass()) return false;
+
 		Temporal other = (Temporal) obj;
 		if (endTime != other.endTime) return false;
 		if (startTime != other.startTime) return false;
 		return true;
 	}
 
+	@Override
+	public String toString() {
+		if (!containsTemporalInfo()) return "";
+		return String.valueOf(TEMPORAL_START) + startTime
+				+ (Long.MAX_VALUE == endTime ? "" : String.valueOf(TEMPORAL_SEPARATOR) + endTime) + TEMPORAL_END;
+	}
 }

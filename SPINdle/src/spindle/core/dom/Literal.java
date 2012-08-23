@@ -78,8 +78,8 @@ public class Literal implements Comparable<Object>, Cloneable, Serializable {
 	}
 
 	public Literal(Literal literal) {
-		if (null == literal) throw new IllegalArgumentException(
-				Messages.getErrorMessage(ErrorMessage.LITERAL_NULL_LITERAL));
+		if (null == literal)
+			throw new IllegalArgumentException(Messages.getErrorMessage(ErrorMessage.LITERAL_NULL_LITERAL));
 		setName(literal.name);
 		setNegation(literal.isNegation);
 		setMode(literal.mode);
@@ -93,8 +93,8 @@ public class Literal implements Comparable<Object>, Cloneable, Serializable {
 	}
 
 	public void setName(final String name) {
-		if (null == name || "".equals(name.trim())) throw new IllegalArgumentException(
-				Messages.getErrorMessage(ErrorMessage.LITERAL_NAME_MISSING));
+		if (null == name || "".equals(name.trim()))
+			throw new IllegalArgumentException(Messages.getErrorMessage(ErrorMessage.LITERAL_NAME_MISSING));
 		this.name = name.trim();
 	}
 
@@ -201,7 +201,8 @@ public class Literal implements Comparable<Object>, Cloneable, Serializable {
 	}
 
 	public void setTemporal(Temporal temporal) {
-		if (null == temporal || !temporal.containsTemporalInfo()) this.temporal = null;
+		if (null == temporal || !temporal.containsTemporalInfo())
+			this.temporal = null;
 		else this.temporal = temporal.clone();
 	}
 
@@ -247,7 +248,8 @@ public class Literal implements Comparable<Object>, Cloneable, Serializable {
 		if (null == temporal && null != literal.temporal) return false;
 		if (null != temporal) {
 			if (null == literal.temporal) return false;
-			if (!temporal.equals(literal.temporal)) return false;
+			if (!temporal.equalsStartTime(temporal)) return false;
+			// if (!temporal.equals(literal.temporal)) return false;
 		}
 		if (!"".equals(mode.getName()) && this.isNegation == literal.isNegation) {
 			return mode.isComplementTo(literal.getMode());
@@ -284,7 +286,8 @@ public class Literal implements Comparable<Object>, Cloneable, Serializable {
 		if (null == temporal) {
 			if (null != literal.temporal) return Integer.MIN_VALUE;
 		} else {
-			if (null == literal.temporal) return Integer.MAX_VALUE;
+			if (null == literal.temporal)
+				return Integer.MAX_VALUE;
 			else {
 				c = temporal.compareTo(literal.temporal);
 				if (c != 0) return c;

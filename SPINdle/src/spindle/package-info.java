@@ -20,7 +20,7 @@
  * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory 
  */
 /**
- * Reasoner main package. Contains reasoner's main class.
+ * SPINdle Reasoner main package. 
  * 
  * @version Last modified 2011.07.27
  * @since version 1.0.0

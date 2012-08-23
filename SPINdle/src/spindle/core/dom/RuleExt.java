@@ -21,6 +21,8 @@
  */
 package spindle.core.dom;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import spindle.sys.AppConst;
 import spindle.sys.message.ErrorMessage;
 
@@ -34,8 +36,11 @@ public class RuleExt extends spindle.core.dom.Rule {
 
 	private static final long serialVersionUID = 1L;
 
-	private int strongerRulesCount = 0;
-	private int weakerRulesCount = 0;
+	// private volatile int strongerRulesCount = 0;
+	// private volatile int weakerRulesCount = 0;
+
+	private AtomicInteger strongerRulesCount = new AtomicInteger();
+	private AtomicInteger weakerRulesCount = new AtomicInteger();
 
 	public RuleExt(String label, RuleType ruleType) {
 		super(label, ruleType);
@@ -43,8 +48,10 @@ public class RuleExt extends spindle.core.dom.Rule {
 
 	public RuleExt(RuleExt rule) {
 		super(rule);
-		strongerRulesCount = rule.strongerRulesCount;
-		weakerRulesCount = rule.weakerRulesCount;
+		// strongerRulesCount = rule.strongerRulesCount;
+		// weakerRulesCount = rule.weakerRulesCount;
+		strongerRulesCount.set(rule.strongerRulesCount.get());
+		weakerRulesCount.set(rule.weakerRulesCount.get());
 	}
 
 	public Rule clone() {
@@ -52,60 +59,71 @@ public class RuleExt extends spindle.core.dom.Rule {
 	}
 
 	public boolean isActive() {
-		return (body.size() == 0 && strongerRulesCount == 0);
+		return body.size() == 0 && strongerRulesCount.get() == 0;
+		// return (body.size() == 0 && strongerRulesCount == 0);
 	}
 
 	public int getStrongerRulesCount() {
-		return strongerRulesCount;
+		return strongerRulesCount.get();
+		// return strongerRulesCount;
 	}
 
 	public void setStrongerRulesCount(final int strongerRulesCount) {
-		this.strongerRulesCount = strongerRulesCount;
+		this.strongerRulesCount.set(strongerRulesCount);
+		// this.strongerRulesCount = strongerRulesCount;
 	}
 
 	public void strongerRulesCountIncrement() {
-		strongerRulesCount++;
+		strongerRulesCount.incrementAndGet();
+		// strongerRulesCount++;
 	}
 
 	public void strongerRulesCountDecrement() throws RuleException {
-		if (strongerRulesCount > 0) {
-			strongerRulesCount--;
+		if (strongerRulesCount.get() > 0) {
+			strongerRulesCount.decrementAndGet();
+			// if (strongerRulesCount > 0) {
+			// strongerRulesCount--;
 		} else throw new RuleException(ErrorMessage.RULE_NO_STRONGER_RULE_EXISTS, new Object[] { label });
 	}
 
 	public int getWeakerRulesCount() {
-		return weakerRulesCount;
+		// return weakerRulesCount;
+		return weakerRulesCount.get();
 	}
 
 	public void setWeakerRulesCount(final int weakerRulesCount) {
-		this.weakerRulesCount = weakerRulesCount;
+		// this.weakerRulesCount = weakerRulesCount;
+		this.weakerRulesCount.set(weakerRulesCount);
 	}
 
 	public void weakerRulesCountIncrement() {
-		weakerRulesCount++;
+		// weakerRulesCount++;
+		weakerRulesCount.incrementAndGet();
 	}
 
 	public void weakerRulesCountDecrement() throws RuleException {
-		if (weakerRulesCount > 0) {
-			weakerRulesCount--;
+		if (weakerRulesCount.get() > 0) {
+			weakerRulesCount.decrementAndGet();
+			// if (weakerRulesCount > 0) {
+			// weakerRulesCount--;
 		} else throw new RuleException(ErrorMessage.RULE_NO_WEAKER_RULE_EXISTS, new Object[] { label });
 	}
 
 	public void resetRuleSuperiorityRelationCounter() {
-		strongerRulesCount = 0;
-		weakerRulesCount = 0;
+		// strongerRulesCount = 0;
+		// weakerRulesCount = 0;
+		strongerRulesCount.set(0);
+		weakerRulesCount.set(0);
 	}
 
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("[").append(label);
-		if (!"".equals(mode.getName())) sb.append(mode);
-		if (!AppConst.isDeploy) {
-			sb.append(" (").append(strongerRulesCount).append(",").append(weakerRulesCount)//
-					.append(",").append(isActive()).append(")");
+	@Override
+	protected String getRuleLabelInfo() {
+		if (AppConst.isPrintExtendedRuleInfo) {
+			return super.getRuleLabelInfo() //
+					+ "(" + strongerRulesCount + "," + weakerRulesCount + "," + isActive() + ")";
+		} else {
+			return super.getRuleLabelInfo();
 		}
-		sb.append("]\t").append(getRuleAsString());
-		return sb.toString();
 	}
 
 }

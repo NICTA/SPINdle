@@ -21,7 +21,6 @@
  */
 package spindle.engine;
 
-
 import spindle.core.SpindleException;
 
 /**
@@ -35,7 +34,15 @@ public class ReasoningEngineFactoryException extends SpindleException {
 
 	private static final long serialVersionUID = 1L;
 
-	public ReasoningEngineFactoryException(String errorTag) {
-		super(null, errorTag, null, null);
+	public ReasoningEngineFactoryException(String errorTag, Object... args) {
+		this(errorTag, null, (Object[]) args);
+	}
+
+	public ReasoningEngineFactoryException(Throwable cause) {
+		this(null, cause, (Object[]) null);
+	}
+
+	public ReasoningEngineFactoryException(String errorTag, Throwable cause, Object... args) {
+		super(null, errorTag, null, cause, args);
 	}
 }

@@ -29,8 +29,31 @@ import spindle.core.dom.Literal;
 import spindle.core.dom.Rule;
 import spindle.core.dom.Superiority;
 import spindle.engine.TheoryNormalizerException;
+import spindle.sys.AppConst;
 import spindle.sys.message.ErrorMessage;
 
+/**
+ * MDL Theory Normalizer (version 2).
+ * <p>
+ * Provides methods that can be used to transform a defeasible theory into an equivalent theory without superiority
+ * relation or defeater using the algorithms described in:
+ * <ul>
+ * <li>G. Antoniou, D. Billington, G. Governatori and M.J. Maher (2001) Representation Results for Defeasible Logic,
+ * <i>ACM Transactions on Computational Logic</i>, Vol. 2 (2), pp. 255-287</li>
+ * </ul>
+ * </p>
+ * <p>
+ * Rule/literal modal conversions and conflict resolutions are based on description presented in:
+ * <ul>
+ * <li>G. Governatori and A. Rotolo (2008) BIO Logical Agents: Norms, Beliefs, Intentions in Defeasible Logic,
+ * <i>Journal of Autonomous Agents and Multi Agent Systems</i>, Vol. 17 (1), pp. 36--69</li>
+ * </ul>
+ * </p>
+ * 
+ * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
+ * @since version 2.2.1
+ * @version Last modified 2012.08.20
+ */
 public class MdlTheoryNormalizer2 extends MdlTheoryNormalizer {
 
 	public MdlTheoryNormalizer2() {
@@ -38,37 +61,39 @@ public class MdlTheoryNormalizer2 extends MdlTheoryNormalizer {
 	}
 
 	/**
-	 * transform the theory to regular form and normalize the defeasible rule to single literal head
+	 * transform the theory to regular form and defeasible rules with multiple heads to single headed rules.
 	 */
 	@Override
 	protected void transformTheoryToRegularFormImpl() throws TheoryNormalizerException {
-		List<Superiority> superiorities = theory.getAllSuperiority();
-		for (Superiority superiority : superiorities) {
-			String superiorRuleId = superiority.getSuperior();
-			String inferiorRuleId = superiority.getInferior();
+		if (AppConst.isVerifyConflictRules) {
+			List<Superiority> superiorities = theory.getAllSuperiority();
+			for (Superiority superiority : superiorities) {
+				String superiorRuleId = superiority.getSuperior();
+				String inferiorRuleId = superiority.getInferior();
 
-			Rule superiorRule = factsAndRules.get(superiorRuleId);
-			Rule inferiorRule = factsAndRules.get(inferiorRuleId);
+				Rule superiorRule = factsAndRules.get(superiorRuleId);
+				Rule inferiorRule = factsAndRules.get(inferiorRuleId);
 
-			if (null == superiorRule) throw new TheoryNormalizerException(getClass(),
-					ErrorMessage.THEORY_SUPERIOR_RULE_NOT_FOUND_IN_THEORY, new Object[] { superiorRuleId });
-			if (null == inferiorRule) throw new TheoryNormalizerException(getClass(),
-					ErrorMessage.THEORY_INFERIOR_RULE_NOT_FOUND_IN_THEORY, new Object[] { inferiorRuleId });
+				if (null == superiorRule) throw new TheoryNormalizerException(getClass(),
+						ErrorMessage.THEORY_SUPERIOR_RULE_NOT_FOUND_IN_THEORY, new Object[] { superiorRuleId });
+				if (null == inferiorRule) throw new TheoryNormalizerException(getClass(),
+						ErrorMessage.THEORY_INFERIOR_RULE_NOT_FOUND_IN_THEORY, new Object[] { inferiorRuleId });
 
-			boolean isConflictRule = false;
-			List<Literal> superiorRuleHead = superiorRule.getHeadLiterals();
-			List<Literal> inferiorRuleHead = inferiorRule.getHeadLiterals();
-			for (int j = 0; j < superiorRuleHead.size() && !isConflictRule; j++) {
-				Set<Literal> conflictLiterals = new TreeSet<Literal>(
-						theory.getConflictLiterals(superiorRuleHead.get(j)));
-				for (int i = 0; i < inferiorRuleHead.size() && !isConflictRule; i++) {
-					if (conflictLiterals.contains(inferiorRuleHead.get(i))) isConflictRule = true;
+				boolean isConflictRule = false;
+				List<Literal> superiorRuleHead = superiorRule.getHeadLiterals();
+				List<Literal> inferiorRuleHead = inferiorRule.getHeadLiterals();
+				for (int j = 0; !isConflictRule && j < superiorRuleHead.size(); j++) {
+					Set<Literal> conflictLiterals = new TreeSet<Literal>(theory.getConflictLiterals(superiorRuleHead
+							.get(j)));
+					for (int i = 0; !isConflictRule && i < inferiorRuleHead.size(); i++) {
+						if (conflictLiterals.contains(inferiorRuleHead.get(i))) isConflictRule = true;
+					}
 				}
+				if (!isConflictRule) throw new TheoryNormalizerException(getClass(),
+						ErrorMessage.SUPERIORITY_UNCONFLICTING_RULES, new Object[] { superiorRuleId, inferiorRuleId });
 			}
-			if (!isConflictRule) { throw new TheoryNormalizerException(getClass(),
-					ErrorMessage.SUPERIORITY_UNCONFLICTING_RULES, new Object[] { superiorRuleId, inferiorRuleId }); }
-
 		}
+
 		super.transformTheoryToRegularFormImpl();
 	}
 

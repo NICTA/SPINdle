@@ -38,6 +38,13 @@ import spindle.engine.sdl.SdlReasoningEngine;
 import spindle.sys.AppConst;
 import spindle.tools.explanation.RuleInferenceStatus;
 
+/**
+ * MDL Reasoning Engine.
+ * 
+ * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
+ * @since version 1.0.0
+ * @version Last modified 2012.08.20
+ */
 public class MdlReasoningEngine extends SdlReasoningEngine {
 	protected Map<String, Set<String>> strongerModeSet = null;
 

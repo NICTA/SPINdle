@@ -46,7 +46,10 @@ public class Rule implements Comparable<Object>, Cloneable, Serializable {
 	protected String originalLabel;
 	protected RuleType ruleType;
 	protected Mode mode;
-	private long delay = -1;
+
+	// private long delay = -1;
+	protected Temporal temporal;
+	// private Temporal ruleTemporalInfo;
 
 	protected Set<Literal> body = null;
 	protected List<Literal> head = null;
@@ -59,11 +62,14 @@ public class Rule implements Comparable<Object>, Cloneable, Serializable {
 		body = new TreeSet<Literal>();
 		head = new ArrayList<Literal>();
 		setMode(null);
+		setTemporal(null);
+		// ruleTemporalInfo=new Temporal();
 	}
 
 	public Rule(Rule rule) {
 		this(rule.label, rule.ruleType);
 		setMode(rule.mode);
+		setTemporal(rule.temporal);
 		try {
 			for (spindle.core.dom.Literal literal : rule.getBodyLiterals()) {
 				addBodyLiteral(literal.clone());
@@ -82,7 +88,8 @@ public class Rule implements Comparable<Object>, Cloneable, Serializable {
 	}
 
 	public void addHeadLiteral(final Literal literal) throws RuleException {
-		if (null == literal || "".equals(literal.getName())) throw new RuleException(ErrorMessage.LITERAL_NAME_MISSING);
+		if (null == literal || "".equals(literal.getName()))
+			throw new RuleException(ErrorMessage.LITERAL_NAME_MISSING);
 
 		if ((ruleType != RuleType.DEFEASIBLE) && head.size() > 0) {
 			// only defeasible rule is allowed to have
@@ -93,6 +100,7 @@ public class Rule implements Comparable<Object>, Cloneable, Serializable {
 		} else {
 			head.add(literal);
 		}
+		// updateRuleTemporalInfo(literal.getTemporal());
 	}
 
 	public void removeHeadLiteral(final Literal literal) {
@@ -117,8 +125,10 @@ public class Rule implements Comparable<Object>, Cloneable, Serializable {
 	}
 
 	public void addBodyLiteral(final Literal literal) throws RuleException {
-		if (null == literal || "".equals(literal.getName())) throw new RuleException(ErrorMessage.LITERAL_NAME_MISSING);
+		if (null == literal || "".equals(literal.getName()))
+			throw new RuleException(ErrorMessage.LITERAL_NAME_MISSING);
 		body.add(literal);
+		// updateRuleTemporalInfo(literal.getTemporal());
 	}
 
 	public void removeBodyLiteral(final Literal literal) {
@@ -171,24 +181,42 @@ public class Rule implements Comparable<Object>, Cloneable, Serializable {
 		this.mode = (mode == null) ? new Mode("", false) : mode.clone();
 	}
 
+	public Temporal getTemporal() {
+		return temporal;
+	}
+
+	public void setTemporal(Temporal temporal) {
+		if (null == temporal || !temporal.containsTemporalInfo())
+			this.temporal = null;
+		else this.temporal = temporal.clone();
+		// updateRuleTemporalInfo(this.temporal);
+	}
+
+	// protected void updateRuleTemporalInfo(Temporal newTemporal){
+	// if (null==newTemporal)return;
+	// if (newTemporal.startTime<ruleTemporalInfo.startTime) ruleTemporalInfo.setStartTime(newTemporal.startTime);
+	// if (newTemporal.endTime>ruleTemporalInfo.endTime)ruleTemporalInfo.setEndTime(newTemporal.endTime);
+	// }
+
+	// public void setDelay(long delay) {
+	// this.delay = (delay < 0) ? -1 : delay;
+	// }
+	//
+	// public long getDelay() {
+	// return delay;
+	// }
+
+	public boolean containsTemporalInfo() {
+		return null != temporal && temporal.containsTemporalInfo();
+		// return delay > 0;
+	}
+
 	public RuleType getRuleType() {
 		return ruleType;
 	}
 
 	public void setRuleType(final RuleType ruleType) {
 		this.ruleType = ruleType;
-	}
-
-	public void setDelay(long delay) {
-		this.delay = (delay < 0) ? -1 : delay;
-	}
-
-	public long getDelay() {
-		return delay;
-	}
-
-	public boolean containsTemporalInfo() {
-		return delay > 0;
 	}
 
 	public boolean isConflictRule(Rule rule) {
@@ -253,8 +281,8 @@ public class Rule implements Comparable<Object>, Cloneable, Serializable {
 		if (modeUsedInBody.size() == 0) {
 		} else {
 			for (Literal literal : newRule.body) {
-				if (!toMode.equals(literal.getMode())) throw new RuleModeConversionException(
-						"inconsistent mode found in rule body");
+				if (!toMode.equals(literal.getMode()))
+					throw new RuleModeConversionException("inconsistent mode found in rule body");
 			}
 		}
 		if (!toMode.equals(newRule.getMode())) {
@@ -270,41 +298,6 @@ public class Rule implements Comparable<Object>, Cloneable, Serializable {
 
 		if (!isModified) throw new RuleModeConversionException("no mode is modified");
 		return newRule;
-	}
-
-	public String getRuleAsString() {
-		char LITERAL_SEPARATOR = DomConst.Literal.LITERAL_SEPARATOR;
-
-		int c = 0;
-		StringBuilder sb = new StringBuilder();
-		if (ruleType == RuleType.FACT) {
-			// do nothing for the body part
-		} else {
-			if (body.size() > 0) {
-				c = 0;
-				for (Literal literal : body) {
-					if (c > 0) sb.append(LITERAL_SEPARATOR);
-					sb.append(literal.toString());
-					c++;
-				}
-				sb.append(" ");
-			}
-		}
-		sb.append(ruleType.getSymbol());
-		if (delay < 0) {
-			sb.append(" ");
-		} else {
-			sb.append("{").append(delay).append("} ");
-		}
-		if (head.size() > 0) {
-			c = 0;
-			for (Literal literal : head) {
-				if (c > 0) sb.append(LITERAL_SEPARATOR);
-				sb.append(literal.toString());
-				c++;
-			}
-		}
-		return sb.toString();
 	}
 
 	public void updateLiteralPredicatesValues(Map<String, String> predicateValues) {
@@ -333,12 +326,42 @@ public class Rule implements Comparable<Object>, Cloneable, Serializable {
 		return r;
 	}
 
-	public String toString() {
+	public String getRuleAsString() {
+		char LITERAL_SEPARATOR = DomConst.Literal.LITERAL_SEPARATOR;
+
+		int c = 0;
 		StringBuilder sb = new StringBuilder();
-		sb.append("[").append(label);
-		if (!"".equals(mode.getName())) sb.append(mode);
-		sb.append("]\t").append(getRuleAsString());
+		if (ruleType == RuleType.FACT) {
+			// do nothing for the body part
+		} else {
+			if (body.size() > 0) {
+				c = 0;
+				for (Literal literal : body) {
+					if (c > 0) sb.append(LITERAL_SEPARATOR);
+					sb.append(literal.toString());
+					c++;
+				}
+				sb.append(" ");
+			}
+		}
+		sb.append(ruleType.getSymbol());
+		if (head.size() > 0) {
+			c = 0;
+			for (Literal literal : head) {
+				if (c > 0) sb.append(LITERAL_SEPARATOR);
+				sb.append(literal.toString());
+				c++;
+			}
+		}
 		return sb.toString();
+	}
+
+	protected String getRuleLabelInfo() {
+		return label + mode + (null == temporal ? "" : temporal.toString());
+	}
+
+	public String toString() {
+		return "[" + getRuleLabelInfo() + "]\t" + getRuleAsString();
 	}
 
 	@Override

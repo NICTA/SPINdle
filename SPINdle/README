@@ -20,24 +20,23 @@ Description
 -----------
 This software, written in Java, implements reasoner to compute the consequence
 of theories in defeasible logic.  The implementation covers both basic 
-defeasible logic and modal defeasible logic.  In version 1.x.x, the reasoner
-for basic defeasible logic is based on the algorithm proposed by Maher[1]
-and the reasoner for modal defeasible logics implements the algorithms
-of Governatori & Rotolo[2]; while in version 2.x.x, the implementations (for both
-SDL and MDL) are based on the new reasoning algorithm as described in Lam &
-Governatori [3].
+defeasible logic and modal defeasible logic.  In version 1.x.x, the inference 
+process for basic defeasible logic is implemented based on the algorithm 
+proposed by Maher[1] and the reasoner for modal defeasible logics implements the 
+algorithms of Governatori & Rotolo[2]; while in version 2.x.x, the 
+implementations (for both SDL and MDL) are based on the new reasoning algorithm 
+as described in Lam & Governatori [3].
 
-********
-* Note *
-********
-Since the support of literals cannot be blocked after theory transformation,
-the ambiguity propagation variant in ver. 1.x.x did not work properly when 
-superiority relations exist in the theory.  That is, in version 1.x.x, the
-ambiguity propagation variant give correct results when there exist no 
-superiority relation in theory.
+The different of approaches used in version 1.x.x and 2.x.x is due to the fact
+that, in Maher's approach, the support of literals under superiority relations 
+cannot be blocked after the superiority removal transformation. That is, in 
+situations where an inferior rule was defeated by a superior rule, the support
+of the inferior rule still exist which subsequently affecting the conclusions
+being derived.
 
-However, this problem has been resolved in ver. 2.x.x. since the new algorithm
-proposed did not require the removal of superiority relations.
+However, in version 2.x.x, this problem is resolved since the new approach that 
+we devised did not require the removal of superiority relations, and can 
+preserve all the representational properties of the defeasible theories.
  
 
 =============

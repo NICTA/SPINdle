@@ -238,10 +238,11 @@ public class ReasonerMain {
 						timer.cancel();
 						timer = null;
 					}
+
+					// print out the performance statistics
+					ReasonerUtilities.printPerformanceStatistics(performanceStatistics);
+					performanceStatistics = null;
 				}
-				// print out the performance statistics
-				ReasonerUtilities.printPerformanceStatistics(performanceStatistics);
-				performanceStatistics = null;
 			}
 		}
 	}

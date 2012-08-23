@@ -44,7 +44,7 @@ import spindle.sys.AppConst;
 import spindle.tools.explanation.RuleInferenceStatus;
 
 /**
- * SDL reasoning engine with ambiguity propagation.
+ * SDL Reasoning Engine with ambiguity propagation.
  * <p>
  * Derive the conclusions of a defeasible theory (with ambiguity propagation) based on the algorithms presented in:
  * <ul>
@@ -54,9 +54,16 @@ import spindle.tools.explanation.RuleInferenceStatus;
  * Semantics in Defeaible Logics, <i>In Proceedings of the 4th International Web Rule Symposium (RuleML-2010)</i> 21-23
  * October, 2010, Washington, DC, USA</li>
  * </ul>
+ * However, due to the fact the algorithm does not preserve all the representational properties of a defeasible theory
+ * after superiority relations removal transformation, or to be precise, the support of a literal will not be blocked if
+ * an infer rule is defeated by a superior rule, the conclusions derived by this reasoning engine is correct ONLY when
+ * there exists NO superiority relations in the original theory.
+
+ * Fortunately, this problem is resolved in {@link SdlReasoningEngineAP2}.
  * </p>
  * 
  * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
+ * @see SdlReasoningEngineAP2
  * @since version 1.0.0
  * @version Last modified 2012.07.21
  */

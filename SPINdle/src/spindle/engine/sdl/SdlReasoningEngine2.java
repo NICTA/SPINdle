@@ -47,9 +47,9 @@ import spindle.sys.message.ErrorMessage;
 import spindle.tools.explanation.RuleInferenceStatus;
 
 /**
- * SDL reasoning engine (version 2).
+ * SDL Reasoning Engine (version 2).
  * <p>
- * Derive the conclusions of a defeasible theory based on the algorithm presented in:
+ * This reasoning engine is based on the algorithm presented in:
  * <ul>
  * <li>H.-P. Lam and G. Governatori (2011) What are the Necessity Rules in Defeasible Logic, <i> In Proceedings of the
  * 11th International Conference on Logic Programming and Nonmonotonic Reasoning (LPNMR-2011)</i>, 16-19 May 2011,
@@ -58,6 +58,7 @@ import spindle.tools.explanation.RuleInferenceStatus;
  * </p>
  * 
  * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
+ * @see SdlReasoningEngine
  * @since version 2.0.0
  * @version Last modified 2012.07.21
  */
@@ -541,7 +542,7 @@ public class SdlReasoningEngine2 extends spindle.engine.sdl.SdlReasoningEngine {
 			removeRules(defeatedRulesStr);
 			for (Rule rule : defeatedRules) {
 				Literal literal = rule.getHeadLiterals().get(0);
-				if (!theory.containsUnprovedRule(literal, RuleType.DEFEASIBLE)) {
+				if (!theory.containsUnprovedRule(literal, RuleType.DEFEASIBLE,false)) {
 					newLiteralFind_defeasiblyNotProvable(literal, checkInference);
 				}
 			}
@@ -648,9 +649,9 @@ public class SdlReasoningEngine2 extends spindle.engine.sdl.SdlReasoningEngine {
 			}
 			if (pendingConclusions[i].size() > 0) {
 				return pendingConclusions[i].removeFirst();
-				// Iterator<Conclusion> it = pendingConclusions[i].iterator();
-				// pendingConclusion = it.next();
-				// it.remove();
+//				 Iterator<Conclusion> it = pendingConclusions[i].iterator();
+//				 pendingConclusion = it.next();
+//				 it.remove();
 			} else {
 				// some loop in the theory may occur
 			}

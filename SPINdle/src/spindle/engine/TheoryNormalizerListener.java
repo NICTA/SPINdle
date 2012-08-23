@@ -29,6 +29,7 @@ import spindle.sys.AppModuleListener;
  * 
  * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
  * @since version 1.0.0
+ * @version Last modified 2011.07.20
  */
 public interface TheoryNormalizerListener extends AppModuleListener {
 	void onTheoryNormalizerMessage(MessageType messageType, String message);

@@ -245,21 +245,6 @@ newRule2.setOriginalLabel(originalRuleLabel)	;
 							rule.getLabel(), "]");
 				}
 			}
-
-			// StringBuilder sb = new StringBuilder("transformTheoryToRegularFormImpl - result - start");
-			// for (Rule r : rulesToAdd) {
-			// sb.append("\nrulesToAdd=").append(r);
-			// }
-			// for (String r : rulesToDelete) {
-			// sb.append("\nrulesToDelete=").append(r);
-			// }
-			// for (Entry<String, List<Rule>> entry : oldNewRuleMapping.entrySet()) {
-			// for (Rule r : entry.getValue()) {
-			// sb.append("\noldNewRuleMapping [").append(entry.getKey()).append("] - ").append(r.getLabel());
-			// }
-			// }
-			// logMessage(Level.FINEST,0, sb.toString());
-			// if (!AppConst.isDeploy) System.out.println(sb.toString());
 			theory.updateTheory(rulesToAdd, rulesToDelete, oldNewRuleMapping);
 		} catch (Exception e) {
 			throw new TheoryNormalizerException(getClass(), ErrorMessage.THEORY_UPDATE_ERROR,
@@ -276,8 +261,6 @@ newRule2.setOriginalLabel(originalRuleLabel)	;
 	private List<Rule> convertRuleMode(Rule rule) throws TheoryNormalizerException {
 		List<Rule> expandedRules = new ArrayList<Rule>();
 		Mode ruleMode = rule.getMode();
-//System.out.println("*** convertRuleMode: "+rule);		
-//System.out.println("*** convertRuleMode: "+ruleMode);		
 		String ruleModeName = ruleMode.getName();
 		if ("".equals(ruleModeName) && rule.getModeUsedInHead().size() > 1) {
 			expandedRules.add(rule);
@@ -319,14 +302,12 @@ newRule2.setOriginalLabel(originalRuleLabel)	;
 			if (!AppConst.isDeploy) logMessage(Level.INFO, 1, "convertRuleMode.1, ruleModeName=", ruleModeName,
 					",conversionRule =", conversionRule);
 			if (null != conversionRule) {
-//System.out.println("ruleMode="+ruleModeName+",conversionRule1="+conversionRule);				
 				for (String cm : conversionRule) {
 					try {
 						Rule newRule = modifiedRule.cloneWithModeChange(new Mode(cm, headLiteralMode.isNegation()));
 						newRule.setLabel(modifiedRule.getLabel() + "_[" + cm + "]");
 						expandedRules.add(newRule);
 						logMessage(Level.FINEST, 3, "newRule=", newRule);
-//System.out.println("   newRule="+newRule);				
 					} catch (Exception e) {
 						logMessage(Level.SEVERE, 0, "[ERROR] ", e.getMessage());
 						throw new TheoryNormalizerException(getClass(), "exception throw while converting rule mode", e);
@@ -341,7 +322,6 @@ newRule2.setOriginalLabel(originalRuleLabel)	;
 			Set<String> conversionRule=theory.getModeConflictRules(headLiteralMode.getName());
 			if (!AppConst.isDeploy) logMessage(Level.INFO, 1, "convertRuleMode.2, ruleModeName=", ruleModeName,
 					",conversionRule =", conversionRule);
-		//	System.out.println("conversionRule2="+conversionRule);
 			if (null != conversionRule && conversionRule.contains(bodyMode)) {
 				try {
 					Rule newRule = modifiedRule.cloneWithModeChange(new Mode(bodyMode, headLiteralMode.isNegation()));

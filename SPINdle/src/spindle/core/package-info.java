@@ -20,9 +20,8 @@
  * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory 
  */
 /**
- * SPINdle reasoner core classes,
- * including classes for document object models,
- * and implementations of various commands/constants used in defeasible theory.
+ * SPINdle reasoner core classes.
+ * Provides the implementations of document object models and system variables used in defeasible theory.
  * 
  * @version Last modified 2011.07.27
  * @since version 1.0.0

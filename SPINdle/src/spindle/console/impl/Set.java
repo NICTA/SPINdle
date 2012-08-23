@@ -56,6 +56,7 @@ public class Set extends CommandBase {
 			+ "\n" + ConfTag.LOG_FOLDER //
 			+ "\n" + ConfTag.LOG_LEVEL //
 			+ "\n" + ConfTag.REASONER_VERSION //
+			+ "\n" + ConfTag.IS_LOG_INFERENCE_PROCESS //
 			+ "\n" + ConfTag.REASONER_AMBIGUOUS_PROPAGATION //
 			+ "\n" + ConfTag.REASONER_WELL_FOUNDED_SEMANTICS //
 	;
@@ -69,6 +70,7 @@ public class Set extends CommandBase {
 		properties.add(ConfTag.LOG_FOLDER);
 		properties.add(ConfTag.LOG_LEVEL);
 		properties.add(ConfTag.REASONER_VERSION);
+		properties.add(ConfTag.IS_LOG_INFERENCE_PROCESS);
 		properties.add(ConfTag.REASONER_AMBIGUOUS_PROPAGATION);
 		properties.add(ConfTag.REASONER_WELL_FOUNDED_SEMANTICS);
 	}
@@ -127,7 +129,9 @@ public class Set extends CommandBase {
 			}
 		} else if (ConfTag.IS_SHOW_PROGRESS.equals(propertyName) //
 				|| ConfTag.IS_SAVE_RESULT.equals(propertyName) //
-				|| ConfTag.IS_SHOW_RESULT.equals(propertyName)) {
+				|| ConfTag.IS_SHOW_RESULT.equals(propertyName) //
+				|| ConfTag.IS_LOG_INFERENCE_PROCESS.equals(propertyName) //
+		) {
 			try {
 				boolean b = Boolean.valueOf(propertyValue);
 				String retn = Boolean.toString(b);

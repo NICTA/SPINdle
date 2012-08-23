@@ -156,8 +156,6 @@ public class Add extends CommandBase {
 			String c = str.substring(l + DflTheoryConst.SYMBOL_MODE_CONVERSION.length()).trim();
 			if ("".equals(c)) throw new ParserException(ErrorMessage.CONSOLE_EMPTY_CONVERT_MODE, str);
 			out.print(Messages.getSystemMessage(SystemMessage.CONSOLE_ADD_MODE_CONVERSION_RULE, new Object[]{o,c}));
-//			out.print("add mode conversion rule: [" + o + "]" + DflTheoryConst.SYMBOL_MODE_CONVERSION + "[" + c
-//					+ "] ...");
 			theory.addModeConversionRules(o, c.split("" + DflTheoryConst.LITERAL_SEPARATOR));
 			printConsoleMessage(SystemMessage.APPLICATION_OPERATION_SUCCESS);
 		} else if ((l = str.indexOf(DflTheoryConst.SYMBOL_MODE_CONFLICT)) > 0) {
@@ -165,7 +163,6 @@ public class Add extends CommandBase {
 			String c = str.substring(l + DflTheoryConst.SYMBOL_MODE_CONVERSION.length()).trim();
 			if ("".equals(c)) throw new ParserException(ErrorMessage.CONSOLE_EMPTY_CONFLICT_MODE, str);
 			out.print(Messages.getSystemMessage(SystemMessage.CONSOLE_ADD_MODE_CONFLICT_RULE, new Object[]{o,c}));
-//			out.print("add mode conflict rule: [" + o + "]" + DflTheoryConst.SYMBOL_MODE_CONFLICT + "[" + c + "] ...");
 			theory.addModeConflictRules(o, c.split("" + DflTheoryConst.LITERAL_SEPARATOR));
 			printConsoleMessage(SystemMessage.APPLICATION_OPERATION_SUCCESS);
 		} else {

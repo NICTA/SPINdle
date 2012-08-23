@@ -45,7 +45,7 @@ import spindle.tools.explanation.RuleInferenceStatus;
 import com.app.utils.Utilities.ProcessStatus;
 
 /**
- * SDL reasoning engine with ambiguity propagation (version 2).
+ * SDL Reasoning Engine with ambiguity propagation (version 2).
  * <p>
  * Derive the conclusions of a defeasible theory (with ambiguity propagation) based on the algorithms presented in:
  * <ul>
@@ -59,6 +59,7 @@ import com.app.utils.Utilities.ProcessStatus;
  * </p>
  * 
  * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
+ * @see SdlReasoningEngineAP
  * @since version 2.0.0
  * @version Last modified 2012.07.21
  */
@@ -149,8 +150,8 @@ public class SdlReasoningEngineAP2 extends SdlReasoningEngine2 {
 				if (!isDefeasibleRuleOnly) {
 					ambiguousExist = isTempConclusionExist(conflictLiterals, tempPosConclusions,
 							ConclusionType.DEFINITE_PROVABLE);
-					if (!ambiguousExist) ambiguousExist = containsUnprovedRuleInTheory(conflictLiterals,
-							RuleType.STRICT);
+					if (!ambiguousExist)
+						ambiguousExist = containsUnprovedRuleInTheory(conflictLiterals, RuleType.STRICT);
 					if (ambiguousExist) {
 						logMessage(Level.FINEST, 1, "==> generatePendingConclusions: ==> add (+D Ambiguous)", literal);
 						addAmbiguousConclusion(conclusion, entry.getValue());
@@ -159,12 +160,14 @@ public class SdlReasoningEngineAP2 extends SdlReasoningEngine2 {
 						if (isRecordExist(literal, ConclusionType.DEFINITE_NOT_PROVABLE)) pos = false;
 						logMessage(Level.FINEST, 1, "02, ambiguousExist=", ambiguousExist, ", pos=", pos);
 						if (pos) {
-							if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
-									conclusion, RuleInferenceStatus.APPICABLE);
+							if (isLogInferenceProcess)
+								getInferenceLogger().updateRuleInferenceStatus(ruleLabels, conclusion,
+										RuleInferenceStatus.APPICABLE);
 							newLiteralFind_definiteProvable(literal, false);
 						} else {
-							if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
-									conclusion, RuleInferenceStatus.DISCARDED);
+							if (isLogInferenceProcess)
+								getInferenceLogger().updateRuleInferenceStatus(ruleLabels, conclusion,
+										RuleInferenceStatus.DISCARDED);
 							newLiteralFind_definiteNotProvable(literal, false);
 						}
 					}
@@ -179,8 +182,8 @@ public class SdlReasoningEngineAP2 extends SdlReasoningEngine2 {
 
 					ambiguousExist = isTempConclusionExist(conflictLiterals, tempPosConclusions,
 							ConclusionType.DEFEASIBLY_PROVABLE);
-					if (!ambiguousExist) ambiguousExist = containsUnprovedRuleInTheory(conflictLiterals,
-							RuleType.DEFEASIBLE);
+					if (!ambiguousExist)
+						ambiguousExist = containsUnprovedRuleInTheory(conflictLiterals, RuleType.DEFEASIBLE);
 					if (ambiguousExist) {
 						logMessage(Level.FINEST, 1, "==> generatePendingConclusions: ==> add (+d Ambiguous)", literal);
 						addAmbiguousConclusion(conclusion, entry.getValue());
@@ -194,8 +197,9 @@ public class SdlReasoningEngineAP2 extends SdlReasoningEngine2 {
 						if (pos && !isAmbiguityDefeated) {
 							// -- for AP - end
 							addPendingConclusion(conclusion);
-							if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
-									conclusion, RuleInferenceStatus.APPICABLE);
+							if (isLogInferenceProcess)
+								getInferenceLogger().updateRuleInferenceStatus(ruleLabels, conclusion,
+										RuleInferenceStatus.APPICABLE);
 							newLiteralFind_defeasiblyProvable(literal, false);
 						} else {
 							// -- for AP - start
@@ -206,8 +210,9 @@ public class SdlReasoningEngineAP2 extends SdlReasoningEngine2 {
 							// -- for AP - end
 							Conclusion c = new Conclusion(ConclusionType.DEFEASIBLY_NOT_PROVABLE, literal);
 							addPendingConclusion(c);
-							if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
-									conclusion, RuleInferenceStatus.DISCARDED);
+							if (isLogInferenceProcess)
+								getInferenceLogger().updateRuleInferenceStatus(ruleLabels, conclusion,
+										RuleInferenceStatus.DISCARDED);
 							newLiteralFind_defeasiblyNotProvable(literal, false);
 						}
 					}
@@ -258,14 +263,15 @@ public class SdlReasoningEngineAP2 extends SdlReasoningEngine2 {
 		for (Rule rule : rules) {
 			switch (rule.getRuleType()) {
 			case STRICT:
-				if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(rule.getOriginalLabel(),
-						RuleType.STRICT, ConclusionType.DEFINITE_NOT_PROVABLE, literal, RuleInferenceStatus.DISCARDED);
+				if (isLogInferenceProcess)
+					getInferenceLogger().updateRuleInferenceStatus(rule.getOriginalLabel(), RuleType.STRICT,
+							ConclusionType.DEFINITE_NOT_PROVABLE, literal, RuleInferenceStatus.DISCARDED);
 				newLiteralFind_definiteNotProvable(literal, true);
 				break;
 			case DEFEASIBLE:
-				if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(rule.getOriginalLabel(),
-						RuleType.DEFEASIBLE, ConclusionType.DEFEASIBLY_NOT_PROVABLE, literal,
-						RuleInferenceStatus.DISCARDED);
+				if (isLogInferenceProcess)
+					getInferenceLogger().updateRuleInferenceStatus(rule.getOriginalLabel(), RuleType.DEFEASIBLE,
+							ConclusionType.DEFEASIBLY_NOT_PROVABLE, literal, RuleInferenceStatus.DISCARDED);
 				newLiteralFind_defeasiblyNotProvable(literal, true);
 				break;
 			default:
@@ -301,14 +307,14 @@ public class SdlReasoningEngineAP2 extends SdlReasoningEngine2 {
 					boolean chk1 = isRecordExist(conflictLiterals, ConclusionType.DEFINITE_PROVABLE);
 					if (chk1) {
 						recordsToRemove.add(new Conclusion(ConclusionType.DEFINITE_PROVABLE, literal));
-						if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
-								RuleType.STRICT, ConclusionType.DEFINITE_NOT_PROVABLE, literal,
-								RuleInferenceStatus.DEFEATED);
+						if (isLogInferenceProcess)
+							getInferenceLogger().updateRuleInferenceStatus(ruleLabels, RuleType.STRICT,
+									ConclusionType.DEFINITE_NOT_PROVABLE, literal, RuleInferenceStatus.DEFEATED);
 						newLiteralFind_definiteNotProvable(literal, true);
 					} else {
-						if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
-								RuleType.STRICT, ConclusionType.DEFINITE_PROVABLE, literal,
-								RuleInferenceStatus.APPICABLE);
+						if (isLogInferenceProcess)
+							getInferenceLogger().updateRuleInferenceStatus(ruleLabels, RuleType.STRICT,
+									ConclusionType.DEFINITE_PROVABLE, literal, RuleInferenceStatus.APPICABLE);
 						newLiteralFind_definiteProvable(literal, true);
 					}
 				}
@@ -331,9 +337,9 @@ public class SdlReasoningEngineAP2 extends SdlReasoningEngine2 {
 					ambiguousConclusionToRemove.add(conclusion);
 					if (dchk7) {
 						recordsToRemove.add(new Conclusion(ConclusionType.DEFEASIBLY_PROVABLE, literal));
-						if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
-								RuleType.DEFEASIBLE, ConclusionType.DEFEASIBLY_NOT_PROVABLE, literal,
-								RuleInferenceStatus.DEFEATED);
+						if (isLogInferenceProcess)
+							getInferenceLogger().updateRuleInferenceStatus(ruleLabels, RuleType.DEFEASIBLE,
+									ConclusionType.DEFEASIBLY_NOT_PROVABLE, literal, RuleInferenceStatus.DEFEATED);
 						newLiteralFind_defeasiblyNotProvable(literal, true);
 						if (!literal.isPlaceHolder()) {
 							addRecord(new Conclusion(ConclusionType.AMBIGUITY_DEFEATED, literal));
@@ -346,14 +352,14 @@ public class SdlReasoningEngineAP2 extends SdlReasoningEngine2 {
 						if ((dchk5 && dchk4) || dchk6) {
 							addRecord(new Conclusion(ConclusionType.AMBIGUITY_DEFEATED, literal));
 							recordsToRemove.add(new Conclusion(ConclusionType.DEFEASIBLY_PROVABLE, literal));
-							if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
-									RuleType.DEFEASIBLE, ConclusionType.DEFEASIBLY_NOT_PROVABLE, literal,
-									RuleInferenceStatus.DEFEATED);
+							if (isLogInferenceProcess)
+								getInferenceLogger().updateRuleInferenceStatus(ruleLabels, RuleType.DEFEASIBLE,
+										ConclusionType.DEFEASIBLY_NOT_PROVABLE, literal, RuleInferenceStatus.DEFEATED);
 							newLiteralFind_defeasiblyNotProvable(literal, true);
 						} else {
-							if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
-									RuleType.DEFEASIBLE, ConclusionType.DEFEASIBLY_PROVABLE, literal,
-									RuleInferenceStatus.APPICABLE);
+							if (isLogInferenceProcess)
+								getInferenceLogger().updateRuleInferenceStatus(ruleLabels, RuleType.DEFEASIBLE,
+										ConclusionType.DEFEASIBLY_PROVABLE, literal, RuleInferenceStatus.APPICABLE);
 							newLiteralFind_defeasiblyProvable(literal, true);
 						}
 					}
@@ -418,17 +424,21 @@ public class SdlReasoningEngineAP2 extends SdlReasoningEngine2 {
 							addAmbiguousConclusion(conclusion, rule.getOriginalLabel());
 						} else {
 							boolean hasConflictRecord = false;
-							if (isRecordExist(conflictLiterals, ConclusionType.DEFINITE_PROVABLE)) hasConflictRecord = true;
-							if (isRecordExist(headLiteral, ConclusionType.DEFINITE_NOT_PROVABLE)) hasConflictRecord = true;
+							if (isRecordExist(conflictLiterals, ConclusionType.DEFINITE_PROVABLE))
+								hasConflictRecord = true;
+							if (isRecordExist(headLiteral, ConclusionType.DEFINITE_NOT_PROVABLE))
+								hasConflictRecord = true;
 							if (hasConflictRecord) {
-								if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(
-										rule.getOriginalLabel(), RuleType.STRICT, ConclusionType.DEFINITE_NOT_PROVABLE,
-										headLiteral, RuleInferenceStatus.DISCARDED);
+								if (isLogInferenceProcess)
+									getInferenceLogger().updateRuleInferenceStatus(rule.getOriginalLabel(),
+											RuleType.STRICT, ConclusionType.DEFINITE_NOT_PROVABLE, headLiteral,
+											RuleInferenceStatus.DISCARDED);
 								newLiteralFind_definiteNotProvable(headLiteral, true);
 							} else {
-								if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(
-										rule.getOriginalLabel(), RuleType.STRICT, ConclusionType.DEFINITE_PROVABLE,
-										headLiteral, RuleInferenceStatus.APPICABLE);
+								if (isLogInferenceProcess)
+									getInferenceLogger().updateRuleInferenceStatus(rule.getOriginalLabel(),
+											RuleType.STRICT, ConclusionType.DEFINITE_PROVABLE, headLiteral,
+											RuleInferenceStatus.APPICABLE);
 								newLiteralFind_definiteProvable(headLiteral, true);
 							}
 						}
@@ -470,27 +480,29 @@ public class SdlReasoningEngineAP2 extends SdlReasoningEngine2 {
 								// -- for AP - start
 							} else if (chk3) {
 								removeRecord(new Conclusion(ConclusionType.DEFEASIBLY_PROVABLE, literal));
-								if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(
-										rule.getOriginalLabel(), RuleType.DEFEASIBLE,
-										ConclusionType.DEFEASIBLY_NOT_PROVABLE, headLiteral,
-										RuleInferenceStatus.DEFEATED);
+								if (isLogInferenceProcess)
+									getInferenceLogger().updateRuleInferenceStatus(rule.getOriginalLabel(),
+											RuleType.DEFEASIBLE, ConclusionType.DEFEASIBLY_NOT_PROVABLE, headLiteral,
+											RuleInferenceStatus.DEFEATED);
 								newLiteralFind_defeasiblyNotProvable(literal, true);
 								// -- for AP - end
 							} else {
 								boolean hasConflictRecord = false;
-								if (isRecordExist(conflictLiterals, ConclusionType.DEFEASIBLY_PROVABLE)) hasConflictRecord = true;
-								if (isRecordExist(headLiteral, ConclusionType.DEFEASIBLY_NOT_PROVABLE)) hasConflictRecord = true;
+								if (isRecordExist(conflictLiterals, ConclusionType.DEFEASIBLY_PROVABLE))
+									hasConflictRecord = true;
+								if (isRecordExist(headLiteral, ConclusionType.DEFEASIBLY_NOT_PROVABLE))
+									hasConflictRecord = true;
 								if (hasConflictRecord) {
-									if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(
-											rule.getOriginalLabel(), RuleType.DEFEASIBLE,
-											ConclusionType.DEFEASIBLY_NOT_PROVABLE, headLiteral,
-											RuleInferenceStatus.DISCARDED);
+									if (isLogInferenceProcess)
+										getInferenceLogger().updateRuleInferenceStatus(rule.getOriginalLabel(),
+												RuleType.DEFEASIBLE, ConclusionType.DEFEASIBLY_NOT_PROVABLE,
+												headLiteral, RuleInferenceStatus.DISCARDED);
 									newLiteralFind_defeasiblyNotProvable(headLiteral, true);
 								} else {
-									if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(
-											rule.getOriginalLabel(), RuleType.DEFEASIBLE,
-											ConclusionType.DEFEASIBLY_PROVABLE, headLiteral,
-											RuleInferenceStatus.APPICABLE);
+									if (isLogInferenceProcess)
+										getInferenceLogger().updateRuleInferenceStatus(rule.getOriginalLabel(),
+												RuleType.DEFEASIBLE, ConclusionType.DEFEASIBLY_PROVABLE, headLiteral,
+												RuleInferenceStatus.APPICABLE);
 									newLiteralFind_defeasiblyProvable(headLiteral, true);
 								}
 							}
@@ -557,24 +569,29 @@ public class SdlReasoningEngineAP2 extends SdlReasoningEngine2 {
 						// -- for AP - start
 					} else if (chk3) {
 						removeRecord(new Conclusion(ConclusionType.DEFEASIBLY_PROVABLE, literal));
-						if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(
-								rule.getOriginalLabel(), RuleType.DEFEASIBLE, ConclusionType.DEFEASIBLY_NOT_PROVABLE,
-								headLiteral, RuleInferenceStatus.DISCARDED);
+						if (isLogInferenceProcess)
+							getInferenceLogger().updateRuleInferenceStatus(rule.getOriginalLabel(),
+									RuleType.DEFEASIBLE, ConclusionType.DEFEASIBLY_NOT_PROVABLE, headLiteral,
+									RuleInferenceStatus.DISCARDED);
 						newLiteralFind_defeasiblyNotProvable(literal, true);
 						// -- for AP - end
 					} else {
 						boolean hasConflictRecord = false;
-						if (isRecordExist(conflictLiterals, ConclusionType.DEFEASIBLY_PROVABLE)) hasConflictRecord = true;
-						if (isRecordExist(headLiteral, ConclusionType.DEFEASIBLY_NOT_PROVABLE)) hasConflictRecord = true;
+						if (isRecordExist(conflictLiterals, ConclusionType.DEFEASIBLY_PROVABLE))
+							hasConflictRecord = true;
+						if (isRecordExist(headLiteral, ConclusionType.DEFEASIBLY_NOT_PROVABLE))
+							hasConflictRecord = true;
 						if (hasConflictRecord) {
-							if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(
-									rule.getOriginalLabel(), RuleType.DEFEASIBLE,
-									ConclusionType.DEFEASIBLY_NOT_PROVABLE, headLiteral, RuleInferenceStatus.DISCARDED);
+							if (isLogInferenceProcess)
+								getInferenceLogger().updateRuleInferenceStatus(rule.getOriginalLabel(),
+										RuleType.DEFEASIBLE, ConclusionType.DEFEASIBLY_NOT_PROVABLE, headLiteral,
+										RuleInferenceStatus.DISCARDED);
 							newLiteralFind_defeasiblyNotProvable(headLiteral, true);
 						} else {
-							if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(
-									rule.getOriginalLabel(), RuleType.DEFEASIBLE, ConclusionType.DEFEASIBLY_PROVABLE,
-									headLiteral, RuleInferenceStatus.APPICABLE);
+							if (isLogInferenceProcess)
+								getInferenceLogger().updateRuleInferenceStatus(rule.getOriginalLabel(),
+										RuleType.DEFEASIBLE, ConclusionType.DEFEASIBLY_PROVABLE, headLiteral,
+										RuleInferenceStatus.APPICABLE);
 							newLiteralFind_defeasiblyProvable(headLiteral, true);
 						}
 					}
@@ -594,14 +611,15 @@ public class SdlReasoningEngineAP2 extends SdlReasoningEngine2 {
 			for (String ruleLabel : defeatedRulesStr) {
 				Rule rule = theory.getRule(ruleLabel);
 				defeatedRules.add(rule);
-				if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(rule.getOriginalLabel(),
-						RuleType.DEFEASIBLE, ConclusionType.DEFEASIBLY_NOT_PROVABLE, rule.getHeadLiterals().get(0),
-						RuleInferenceStatus.DEFEATED);
+				if (isLogInferenceProcess)
+					getInferenceLogger().updateRuleInferenceStatus(rule.getOriginalLabel(), RuleType.DEFEASIBLE,
+							ConclusionType.DEFEASIBLY_NOT_PROVABLE, rule.getHeadLiterals().get(0),
+							RuleInferenceStatus.DEFEATED);
 			}
 			removeRules(defeatedRulesStr);
 			for (Rule rule : defeatedRules) {
 				Literal literal = rule.getHeadLiterals().get(0);
-				if (!theory.containsUnprovedRule(literal, RuleType.DEFEASIBLE)) {
+				if (!theory.containsUnprovedRule(literal, RuleType.DEFEASIBLE, false)) {
 					addRecord(new Conclusion(ConclusionType.NEGATIVELY_SUPPORT, literal));
 					newLiteralFind_defeasiblyNotProvable(literal, checkInference);
 				}
@@ -638,9 +656,9 @@ public class SdlReasoningEngineAP2 extends SdlReasoningEngine2 {
 			if (rule.getRuleType() == RuleType.DEFEASIBLE && rule.isBodyLiteral(literal)) {
 				rulesToRemove.add(rule.getLabel());
 				inapplicableLiterals.add(headLiteral);
-				if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(rule.getOriginalLabel(),
-						RuleType.DEFEASIBLE, ConclusionType.DEFEASIBLY_NOT_PROVABLE, headLiteral,
-						RuleInferenceStatus.DEFEATED);
+				if (isLogInferenceProcess)
+					getInferenceLogger().updateRuleInferenceStatus(rule.getOriginalLabel(), RuleType.DEFEASIBLE,
+							ConclusionType.DEFEASIBLY_NOT_PROVABLE, headLiteral, RuleInferenceStatus.DEFEATED);
 			}
 		}
 

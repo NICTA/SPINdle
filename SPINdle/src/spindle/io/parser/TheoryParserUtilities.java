@@ -49,7 +49,7 @@ import spindle.sys.message.ErrorMessage;
  * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
  * @version 2011.07.26
  * @since version 2.1.0
- * @deprecated As of version 2.1.0, the DFL theory parser class will be replaced by
+ * @deprecated As of version 2.1.0, the DFL theory parser class {@link spindle.io.parser.DflTheoryParser} will be replaced by
  *             {@link spindle.io.parser.DflTheoryParser2}. The theory parser utilities class will no longer be used
  *             anymore.
  */

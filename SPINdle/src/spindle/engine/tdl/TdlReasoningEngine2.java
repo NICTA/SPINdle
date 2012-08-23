@@ -28,47 +28,52 @@ import java.util.TreeMap;
 import spindle.core.dom.ConclusionType;
 import spindle.core.dom.Literal;
 import spindle.core.dom.Temporal;
-import spindle.engine.ReasoningEngineFactoryException;
+import spindle.engine.ReasoningEngineException;
 import spindle.engine.mdl.MdlReasoningEngine2;
 import spindle.sys.AppConst;
+import spindle.sys.message.ErrorMessage;
 
+/**
+ * TDL Reasoning Engine.
+ * 
+ * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
+ * @since version 2.2.1
+ * @version Last modified 2012.08.20
+ */
 public class TdlReasoningEngine2 extends MdlReasoningEngine2 {
 
-	private Map<Literal, Map<Temporal,ConclusionType>> literalsTemporalInfo = new TreeMap<Literal, Map<Temporal,ConclusionType>>();
+	private Map<Literal, Map<Temporal, ConclusionType>> literalsTemporalInfo = new TreeMap<Literal, Map<Temporal, ConclusionType>>();
 
 	private Map<Literal, Literal> basicLiterals = new TreeMap<Literal, Literal>();
 
-	public TdlReasoningEngine2() throws ReasoningEngineFactoryException {
+	public TdlReasoningEngine2() throws ReasoningEngineException {
 		super();
-		if (AppConst.isDeploy) throw new ReasoningEngineFactoryException("Reasoning engine is currently not support!");
+		if (AppConst.isDeploy) throw new ReasoningEngineException(getClass(),
+				ErrorMessage.REASONING_ENGINE_NOT_SUPPORTED, new Object[] { "TDL" });
 	}
 
-	protected void generateTheoryBasicLiterals(){
+	protected void generateTheoryBasicLiterals() {
 		Set<Literal> literalsInTheory = theory.getAllLiteralsInRules();
 		for (Literal literal : literalsInTheory) {
 			basicLiterals.put(literal, generateBasicLiteral(literal));
 		}
 	}
-	
-	
+
 	protected Literal generateBasicLiteral(Literal literal) {
 		Literal basicLiteral = literal.clone();
-			basicLiteral.setTemporal(null);
-			return basicLiteral;
+		basicLiteral.setTemporal(null);
+		return basicLiteral;
 	}
-	
-	
-	protected void addLiteralTemporalInfo(Literal literal,ConclusionType conclusionType){
-Literal		basicLiteral=basicLiterals.get(literal);
 
-		Map<Temporal,ConclusionType> literalTemporalInfo = literalsTemporalInfo.get(basicLiteral);
+	protected void addLiteralTemporalInfo(Literal literal, ConclusionType conclusionType) {
+		Literal basicLiteral = basicLiterals.get(literal);
+
+		Map<Temporal, ConclusionType> literalTemporalInfo = literalsTemporalInfo.get(basicLiteral);
 		if (null == literalTemporalInfo) {
-			literalTemporalInfo = new TreeMap<Temporal,ConclusionType>();
+			literalTemporalInfo = new TreeMap<Temporal, ConclusionType>();
 			literalsTemporalInfo.put(basicLiteral, literalTemporalInfo);
 		}
-		literalTemporalInfo.put(literal.getTemporal(),conclusionType);
+		literalTemporalInfo.put(literal.getTemporal(), conclusionType);
 	}
 
-	
-	
 }
