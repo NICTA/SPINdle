@@ -53,7 +53,7 @@
 			</xsd:element>
 			<xsd:choice maxOccurs="1" minOccurs="0">
 				<xsd:element name="mode" type="stMode"></xsd:element>
-				<xsd:element name="not" type="xsd:string"></xsd:element>
+				<xsd:element name="not" type="ctNegItem"></xsd:element>
 			</xsd:choice>
 		</xsd:sequence>
 		<xsd:attribute name="label" type="xsd:string"></xsd:attribute>
