@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://spin.nicta.org.au/spindle/spindleDefeasibleTheory.xsd"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns="http://spin.nicta.org.au/spindle/spindleDefeasibleTheory.xsd">
+
+	<xsd:element name="theory" type="ctTheory"/>
+
+	<xsd:complexType name="ctTheory">
+		<xsd:sequence>
+			<xsd:element name="fact" type="ctFact" maxOccurs="unbounded" minOccurs="0"> </xsd:element>
+			<xsd:element name="rule" type="ctRule" maxOccurs="unbounded" minOccurs="0"> </xsd:element>
+			<xsd:element name="superiority" type="ctSuperiority" maxOccurs="unbounded" minOccurs="0"
+				> </xsd:element>
+			<xsd:element name="coversion" type="ctConversion" maxOccurs="unbounded" minOccurs="0"> </xsd:element>
+			<xsd:element name="conflict" type="ctConflict" maxOccurs="unbounded" minOccurs="0"> </xsd:element>
+			<xsd:element name="literalVariable" type="ctLiteralVariable" minOccurs="0"
+				maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+
+	<xsd:complexType name="ctLiteral">
+		<xsd:sequence>
+			<xsd:element name="mode" type="stMode" minOccurs="0"/>
+			<xsd:element name="atom" type="stAtom"/>
+			<xsd:element name="not" type="ctNegItem" minOccurs="0" maxOccurs="2"/>
+			<xsd:element name="predicates" type="xsd:string" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+
+	<xsd:complexType name="ctLiteralList">
+		<xsd:choice>
+			<xsd:element name="literal" type="ctLiteral" minOccurs="1" maxOccurs="1"> </xsd:element>
+			<xsd:element name="and" type="ctAndLiterals" maxOccurs="1" minOccurs="1"/>
+		</xsd:choice>
+	</xsd:complexType>
+
+	<xsd:complexType name="ctRule">
+		<xsd:sequence>
+			<xsd:element name="head" type="ctLiteralList" maxOccurs="1" minOccurs="1"> </xsd:element>
+			<xsd:element name="body" type="ctLiteralList" maxOccurs="1" minOccurs="0"> </xsd:element>
+			<xsd:choice maxOccurs="1" minOccurs="0">
+				<xsd:element name="mode" type="stMode"/>
+				<xsd:element name="not" type="xsd:string"/>
+			</xsd:choice>
+		</xsd:sequence>
+		<xsd:attribute name="label" type="xsd:string"/>
+		<xsd:attribute name="strength" type="xsd:string"/>
+	</xsd:complexType>
+
+	<xsd:complexType name="ctAndLiterals">
+		<xsd:sequence>
+			<xsd:element name="literal" type="ctLiteral" maxOccurs="unbounded" minOccurs="1"/>
+		</xsd:sequence>
+	</xsd:complexType>
+
+
+	<xsd:complexType name="ctConversion">
+		<xsd:sequence>
+			<xsd:element name="from" type="xsd:string" maxOccurs="1" minOccurs="1"/>
+			<xsd:element name="to" type="xsd:string" maxOccurs="unbounded" minOccurs="1"/>
+		</xsd:sequence>
+	</xsd:complexType>
+
+	<xsd:complexType name="ctConflict">
+		<xsd:sequence>
+			<xsd:element name="conflictMode" type="xsd:string" maxOccurs="1" minOccurs="1"/>
+			<xsd:element name="conflictWith" type="xsd:string" maxOccurs="unbounded" minOccurs="1"/>
+		</xsd:sequence>
+	</xsd:complexType>
+
+	<xsd:complexType name="ctSuperiority">
+		<xsd:attribute name="superior" type="xsd:string"/>
+		<xsd:attribute name="inferior" type="xsd:string"/>
+	</xsd:complexType>
+
+
+
+	<xsd:complexType name="ctFact">
+		<xsd:sequence>
+			<xsd:element name="literal" type="ctLiteral"/>
+		</xsd:sequence>
+		<xsd:attribute name="label" type="xsd:string"/>
+		<xsd:attribute name="mode" type="xsd:string"/>
+	</xsd:complexType>
+
+	<xsd:simpleType name="stMode">
+		<xsd:restriction base="xsd:string"/>
+	</xsd:simpleType>
+
+
+	<xsd:simpleType name="stAtom">
+		<xsd:restriction base="xsd:string"/>
+	</xsd:simpleType>
+
+	<xsd:complexType name="ctAtom">
+		<xsd:sequence>
+			<xsd:element name="atom" type="stAtom" maxOccurs="1" minOccurs="1"/>
+		</xsd:sequence>
+	</xsd:complexType>
+
+	<xsd:complexType name="ctLiteralVariable">
+		<xsd:sequence>
+			<xsd:element name="name" type="ctLiteralVariableItem"/>
+			<xsd:element name="value" type="ctLiteralVariableItem"/>
+		</xsd:sequence>
+	</xsd:complexType>
+
+	<xsd:complexType name="ctLiteralVariableItem">
+		<xsd:sequence>
+			<xsd:element name="literal" type="ctLiteral"/>
+		</xsd:sequence>
+	</xsd:complexType>
+
+
+	<xsd:complexType name="ctLiteralBooleanFunction">
+		<xsd:sequence>
+			<xsd:element name="name" type="ctLiteralVariableItem"/>
+			<xsd:element name="value" type="ctLiteralBooleanFunctionItem"/>
+		</xsd:sequence>
+	</xsd:complexType>
+
+	<xsd:complexType name="ctLiteralFormula">
+		<xsd:sequence>
+			<xsd:element name="name" type="ctLiteralVariableItem"/>
+			<xsd:element name="formula" type="xsd:string"/>
+		</xsd:sequence>
+	</xsd:complexType>
+
+
+	<xsd:complexType name="ctLiteralBooleanFunctionItem">
+		<xsd:sequence>
+			<xsd:element name="formula" type="ctLiteral"/>
+		</xsd:sequence>
+	</xsd:complexType>
+
+
+	<xsd:complexType name="ctNegItem">
+		<xsd:sequence>
+			<xsd:choice maxOccurs="1" minOccurs="1">
+				<xsd:element name="mode" type="stMode"/>
+				<xsd:element name="atom" type="stAtom"/>
+			</xsd:choice>
+		</xsd:sequence>
+	</xsd:complexType>
+</xsd:schema>

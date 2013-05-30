@@ -1,0 +1,6 @@
+<spindle>
+	<io classname="spindle.io.parser.XmlTheoryParser2" />
+	<io classname="spindle.io.parser.DflTheoryParser2" />
+	<io classname="spindle.io.outputter.XmlTheoryOutputter2" />
+	<io classname="spindle.io.outputter.DflTheoryOutputter" />
+</spindle>

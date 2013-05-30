@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<theory xmlns="http://spin.nicta.org.au/spindle/spindleDefeasibleTheory2.xsd">
+    <fact>
+        <atom>a</atom>
+    </fact>
+    <fact>
+        <atom>b</atom>
+    </fact>
+    <rule ruletype="STRICT" label="r1">
+        <head>
+            <literal>
+                <atom>c</atom>
+            </literal>
+        </head>
+        <body>
+            <and>
+                <literal>
+                    <atom>a</atom>
+                </literal>
+                <literal>
+                    <atom>b</atom>
+                </literal>
+            </and>
+        </body>
+    </rule>
+    <rule ruletype="DEFEASIBLE" label="r2">
+        <head>
+            <literal>
+                <not>
+                    <atom>c</atom>
+                </not>
+            </literal>
+        </head>
+        <body>
+            <and>
+                <literal>
+                    <atom>a</atom>
+                </literal>
+                <literal>
+                    <atom>b</atom>
+                </literal>
+            </and>
+        </body>
+    </rule>
+    <superiority inferior="r2" superior="r1"/>
+</theory>
