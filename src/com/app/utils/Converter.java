@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -120,7 +120,7 @@ public class Converter {
 	}
 
 	public static long timeString2long(final String timeStr) throws InvalidArgumentException {
-		List<Entry<CharType, String>> tokens = TextUtilities.extractStringTokens(timeStr, true);
+		List<NameValuePair<CharType, String>> tokens = TextUtilities.extractStringTokens(timeStr, true);
 		if (tokens.size() % 2 != 0 || tokens.size() > TIME_VALUES.size() * 2) throw new IllegalArgumentException(TextUtilities.formatArguments(INVALID_STRING,
 				1, new String[] { timeStr }));
 
@@ -129,7 +129,7 @@ public class Converter {
 			for (int i = 0; i < tokens.size(); i += 2) {
 				if (tokens.get(i).getKey() != CharType.NUMERIC) throw new IllegalArgumentException(TextUtilities.formatArguments(INVALID_STRING, 1,
 						new String[] { timeStr }));
-				Entry<CharType, String> entry = tokens.get(i + 1);
+				NameValuePair<CharType, String> entry = tokens.get(i + 1);
 				if (entry.getKey() != CharType.CHARACTER || !TIME_VALUES.containsKey(entry.getValue())) throw new IllegalArgumentException(
 						TextUtilities.formatArguments(INVALID_STRING, 1, new String[] { timeStr }));
 				if (values.containsKey(entry.getValue())) throw new IllegalArgumentException(TextUtilities.formatArguments(INVALID_STRING, 1,
@@ -160,7 +160,7 @@ public class Converter {
 	 * @see #timeString2long(String)
 	 */
 	public static boolean isTimeString(final String timeStr) throws InvalidArgumentException {
-		List<Entry<CharType, String>> tokens = TextUtilities.extractStringTokens(timeStr, true);
+		List<NameValuePair<CharType, String>> tokens = TextUtilities.extractStringTokens(timeStr, true);
 		if (tokens.size() % 2 != 0 || tokens.size() > TIME_VALUES.size() * 2) throw new IllegalArgumentException(TextUtilities.formatArguments(INVALID_STRING,
 				1, new String[] { timeStr }));
 
@@ -168,7 +168,7 @@ public class Converter {
 			if (tokens.get(i).getKey() != CharType.NUMERIC) throw new InvalidArgumentException(TextUtilities.formatArguments(INVALID_STRING, 1,
 					new String[] { timeStr }));
 
-			Entry<CharType, String> entry = tokens.get(i + 1);
+			NameValuePair<CharType, String> entry = tokens.get(i + 1);
 			if (entry.getKey() != CharType.CHARACTER || !TIME_VALUES.containsKey(entry.getValue())) throw new IllegalArgumentException(
 					TextUtilities.formatArguments(INVALID_STRING, 1, new String[] { timeStr }));
 		}

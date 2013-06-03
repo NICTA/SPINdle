@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -22,6 +22,7 @@
 package spindle.core.dom;
 
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -50,15 +51,17 @@ import spindle.sys.message.ErrorMessage;
 public class Theory extends TheoryCore implements Cloneable {
 
 	private static final long serialVersionUID = 1L;
+	private static final LiteralComparator PLAIN_LITERAL_COMPARATOR = new LiteralComparator(false);
 
 	public static final String DEFAULT_RULE_LABEL_PREFIX = "Rule_";
-	public static final DecimalFormat formatter = new DecimalFormat("00000");
+	public static final NumberFormat formatter = new DecimalFormat("00000");
 	private Map<String, AtomicLong> ruleLabelCounters;
 
 	private final Map<String, Set<String>> strongerModeSet = new TreeMap<String, Set<String>>();
 	private final Map<String, Set<String>> allModeConflictRulesResolved = new TreeMap<String, Set<String>>();
 
-	protected Map<Literal, List<Literal>> conflictLiteralsStore;
+	protected Map<Literal, TreeSet<Literal>> sameConflictLiteralsStore;
+	protected Map<Literal, TreeSet<Literal>> conflictLiteralsStore;
 	private Map<String, Set<String>> ruleLabelMapping;
 
 	public Theory() {
@@ -68,7 +71,8 @@ public class Theory extends TheoryCore implements Cloneable {
 	public Theory(Theory theory) {
 		super(theory);
 		ruleLabelCounters = new HashMap<String, AtomicLong>();
-		conflictLiteralsStore = new TreeMap<Literal, List<Literal>>();
+		sameConflictLiteralsStore = new TreeMap<Literal, TreeSet<Literal>>(PLAIN_LITERAL_COMPARATOR);
+		conflictLiteralsStore = new TreeMap<Literal, TreeSet<Literal>>(PLAIN_LITERAL_COMPARATOR);
 	}
 
 	/**
@@ -143,7 +147,7 @@ public class Theory extends TheoryCore implements Cloneable {
 			}
 		}
 		if (null != oldNewRuleMapping && oldNewRuleMapping.size() > 0) {
-			System.out.println(oldNewRuleMapping.toString());
+		//	System.out.println(oldNewRuleMapping.toString());
 			try {
 				updateSuperiorityMapping(oldNewRuleMapping);
 			} catch (TheoryException e) {
@@ -164,14 +168,12 @@ public class Theory extends TheoryCore implements Cloneable {
 			for (Entry<String, Set<Superiority>> entry : superiors.entrySet()) {
 				RuleExt superiorRule = (RuleExt) factsAndAllRules.get(entry.getKey());
 				if (null == superiorRule)
-					throw new RuleException(ErrorMessage.SUPERIORITY_SUPERIOR_RULE_NOT_DEFINED,
-							new Object[] { entry.getKey() });
+					throw new RuleException(ErrorMessage.SUPERIORITY_SUPERIOR_RULE_NOT_DEFINED, new Object[] { entry.getKey() });
 				superiorRule.resetRuleSuperiorityRelationCounter();
 				for (Superiority sup : entry.getValue()) {
 					RuleExt inferiorRule = (RuleExt) factsAndAllRules.get(sup.getInferior());
 					if (null == inferiorRule)
-						throw new RuleException(ErrorMessage.SUPERIORITY_INFERIOR_RULE_NOT_DEFINED,
-								new Object[] { sup.getInferior() });
+						throw new RuleException(ErrorMessage.SUPERIORITY_INFERIOR_RULE_NOT_DEFINED, new Object[] { sup.getInferior() });
 					inferiorRule.resetRuleSuperiorityRelationCounter();
 				}
 			}
@@ -219,8 +221,7 @@ public class Theory extends TheoryCore implements Cloneable {
 						supRules = new ArrayList<Rule>();
 						Rule r = factsAndAllRules.get(supLabel);
 						if (null == r)
-							throw new TheoryException(ErrorMessage.SUPERIORITY_SUPERIOR_RULE_NOT_DEFINED,
-									new Object[] { supLabel });
+							throw new TheoryException(ErrorMessage.SUPERIORITY_SUPERIOR_RULE_NOT_DEFINED, new Object[] { supLabel });
 						supRules.add(r);
 					} else {
 						if (!supToDelete.contains(origSuperiority)) supToDelete.add(origSuperiority);
@@ -231,8 +232,7 @@ public class Theory extends TheoryCore implements Cloneable {
 						infRules = new ArrayList<Rule>();
 						Rule r = factsAndAllRules.get(infLabel);
 						if (null == r)
-							throw new TheoryException(ErrorMessage.SUPERIORITY_INFERIOR_RULE_NOT_DEFINED,
-									new Object[] { infLabel });
+							throw new TheoryException(ErrorMessage.SUPERIORITY_INFERIOR_RULE_NOT_DEFINED, new Object[] { infLabel });
 						infRules.add(r);
 					} else {
 						if (!supToDelete.contains(origSuperiority)) supToDelete.add(origSuperiority);
@@ -254,35 +254,6 @@ public class Theory extends TheoryCore implements Cloneable {
 			}
 		}
 		return ProcessStatus.SUCCESS;
-	}
-
-	public boolean containsUnprovedRule(final Literal literal, final RuleType ruleType, boolean checkEmptyBody) {
-		Map<String, Rule> rules = getRules(literal);
-		if (null == rules || rules.size() == 0) return false; // literal does not appear in theory
-
-		if (null == ruleType) {
-			if (checkEmptyBody) {
-				for (Rule rule : rules.values()) {
-					if (!rule.isEmptyBody() && rule.isHeadLiteral(literal)) return true;
-				}
-			} else {
-				for (Rule rule : rules.values()) {
-					if (rule.isHeadLiteral(literal)) return true;
-				}
-			}
-		} else {
-			if (checkEmptyBody) {
-				for (Rule rule : rules.values()) {
-					if (ruleType == rule.getRuleType() && rule.isEmptyBody() && rule.isHeadLiteral(literal))
-						return true;
-				}
-			} else {
-				for (Rule rule : rules.values()) {
-					if (ruleType == rule.getRuleType() && rule.isHeadLiteral(literal)) return true;
-				}
-			}
-		}
-		return false;
 	}
 
 	/**
@@ -395,16 +366,59 @@ public class Theory extends TheoryCore implements Cloneable {
 	}
 
 	public boolean containsInRuleHead(final Literal literal, final RuleType ruleType) {
-		Collection<Rule> rules = getRules(literal).values();
-		if (rules == null || rules.size() == 0) return false; // literal does not appear in theory
+		return containsUnprovedRule(literal, ruleType, false);
+		// Collection<Rule> rules = getRules(literal).values();
+		// if (rules == null || rules.size() == 0) return false; // literal does not appear in theory
+		//
+		// if (null == ruleType) {
+		// for (Rule rule : rules) {
+		// if (rule.isHeadLiteral(literal)) return true;
+		// }
+		// } else {
+		// for (Rule rule : rules) {
+		// if (ruleType == rule.getRuleType() && rule.isHeadLiteral(literal)) return true;
+		// }
+		// }
+		// return false;
+	}
 
+	public boolean containsInRuleBody(final Literal literal, final RuleType ruleType) {
+		Map<String, Rule> rules = getRules(literal);
 		if (null == ruleType) {
-			for (Rule rule : rules) {
-				if (rule.isHeadLiteral(literal)) return true;
+			for (Rule rule : rules.values()) {
+				if (rule.isBodyLiteral(literal)) return true;
 			}
 		} else {
-			for (Rule rule : rules) {
-				if (ruleType == rule.getRuleType() && rule.isHeadLiteral(literal)) return true;
+			for (Rule rule : rules.values()) {
+				if (ruleType == rule.getRuleType() && rule.isBodyLiteral(literal)) return true;
+			}
+		}
+		return false;
+	}
+
+	public boolean containsUnprovedRule(final Literal literal, final RuleType ruleType, boolean checkEmptyBody) {
+		Map<String, Rule> rules = getRules(literal);
+		if (null == rules || rules.size() == 0) return false; // literal does not appear in theory
+
+		if (null == ruleType) {
+			if (checkEmptyBody) {
+				for (Rule rule : rules.values()) {
+					if (!rule.isEmptyBody() && rule.isHeadLiteral(literal)) return true;
+				}
+			} else {
+				for (Rule rule : rules.values()) {
+					if (rule.isHeadLiteral(literal)) return true;
+				}
+			}
+		} else {
+			if (checkEmptyBody) {
+				for (Rule rule : rules.values()) {
+					if (ruleType == rule.getRuleType() && rule.isEmptyBody() && rule.isHeadLiteral(literal)) return true;
+				}
+			} else {
+				for (Rule rule : rules.values()) {
+					if (ruleType == rule.getRuleType() && rule.isHeadLiteral(literal)) return true;
+				}
 			}
 		}
 		return false;
@@ -422,15 +436,24 @@ public class Theory extends TheoryCore implements Cloneable {
 		return newRules;
 	}
 
-	public List<Literal> getConflictLiterals(Literal literal) {
+	/**
+	 * Return the set of conflict literals but with no temporal information.
+	 * 
+	 * @param origLiteral Original literal.
+	 * @return The set of plain literals that are conflict with the prescribed literal, i.e., set of conflicting
+	 *         literals without temporal information.
+	 */
+	public TreeSet<Literal> getConflictLiterals(Literal origLiteral) {
 		if (isConflictRulesModified() || isConversionRulesModified()) {
 			updateModeConversionConflictRules();
 		}
 
-		List<Literal> conflictLiterals = conflictLiteralsStore.get(literal);
+		TreeSet<Literal> conflictLiterals = conflictLiteralsStore.get(origLiteral);
 		if (null != conflictLiterals) return conflictLiterals;
 
-		conflictLiterals = new Vector<Literal>();
+		conflictLiterals = new TreeSet<Literal>(PLAIN_LITERAL_COMPARATOR);
+
+		Literal literal = origLiteral.cloneWithNoTemporal();
 
 		Literal literalComplement = literal.getComplementClone();
 		conflictLiterals.add(literalComplement);
@@ -439,13 +462,15 @@ public class Theory extends TheoryCore implements Cloneable {
 		if (!"".equals(literalMode.getName())) {
 			Set<String> modeList = allModeConflictRulesResolved.get(literalMode.getName());
 			if (null != modeList) {
+				boolean modeNeg=literalMode.isNegation();
+				boolean negatedModeNeg=!modeNeg;
 				for (String modeStr : modeList) {
-					Literal conflictLiteral = literalComplement.clone();
-					conflictLiteral.setMode(new Mode(modeStr, literalMode.isNegation()));
-					conflictLiterals.add(conflictLiteral);
+					Literal conflictLiteral1 = literalComplement.clone();
+					conflictLiteral1.setMode(new Mode(modeStr, modeNeg));
+					conflictLiterals.add(conflictLiteral1);
 
 					Literal conflictLiteral2 = literal.clone();
-					conflictLiteral2.setMode(new Mode(modeStr, !literalMode.isNegation()));
+					conflictLiteral2.setMode(new Mode(modeStr, negatedModeNeg));
 					conflictLiterals.add(conflictLiteral2);
 				}
 			}
@@ -455,6 +480,87 @@ public class Theory extends TheoryCore implements Cloneable {
 		}
 		conflictLiteralsStore.put(literal, conflictLiterals);
 		return conflictLiterals;
+	}
+
+	/**
+	 * Return the set of literals that are having the same conflicting literals.
+	 * 
+	 * @param origLiteral Literal to be examined.
+	 * @return The set of literals that are having the same conflicting literals.
+	 */
+	public TreeSet<Literal> getLiteralsWithSameConflictLiterals(Literal origLiteral) {
+		if (isConflictRulesModified() || isConversionRulesModified()) {
+			updateModeConversionConflictRules();
+		}
+
+		TreeSet<Literal> sameConflictLiterals = sameConflictLiteralsStore.get(origLiteral);
+		if (null != sameConflictLiterals) return sameConflictLiterals;
+
+		Literal literal = origLiteral.cloneWithNoTemporal();
+
+		sameConflictLiterals = new TreeSet<Literal>();
+		sameConflictLiterals.add(literal);
+
+		Mode literalMode = literal.getMode();
+		if (!"".equals(literalMode.getName())) {
+			Set<String> modeList = allModeConflictRulesResolved.get(literalMode.getName());
+			if (null != modeList) {
+				boolean modeNeg=literalMode.isNegation();
+				boolean negatedModeNeg=!modeNeg;
+				for (String modeStr : modeList) {
+					Literal l1 = literal.clone();
+					l1.setMode(new Mode(modeStr, modeNeg));
+					sameConflictLiterals.add(l1);
+
+					Literal l2 = literal.getComplementClone();
+					l2.setMode(new Mode(modeStr, negatedModeNeg));
+					sameConflictLiterals.add(l2);
+				}
+			}
+			Literal l = literal.getComplementClone();
+			l.setMode(literalMode.getComplementClone());
+			sameConflictLiterals.add(l);
+		}
+		sameConflictLiteralsStore.put(literal, sameConflictLiterals);
+		return sameConflictLiterals;
+	}
+	
+	public Set<Literal> getSameStartLiterals(Literal literal, ProvabilityLevel provability) {
+		Set<Literal> relatedLiterals = getRelatedLiterals(literal, provability);
+		if (null == relatedLiterals) return null;
+		Set<Literal> sameStartLiterals = new TreeSet<Literal>();
+		Temporal literalTemporal = literal.getTemporal();
+
+		for (Literal l : relatedLiterals) {
+			Temporal t = l.getTemporal();
+			if (null == t) {
+				if (null == literalTemporal || Long.MIN_VALUE == literalTemporal.getStartTime()) sameStartLiterals.add(l);
+			} else {
+				if (null == literalTemporal) {
+					if (Long.MIN_VALUE == t.getStartTime()) sameStartLiterals.add(l);
+				} else {
+					if (t.sameStart(literalTemporal)) sameStartLiterals.add(l);
+				}
+			}
+		}
+		return sameStartLiterals.size() == 0 ? null : sameStartLiterals;
+	}
+	
+	public Set<Literal> getOverlappedLiterals(Literal literal, ProvabilityLevel provability) {
+		Set<Literal> relatedLiterals = getRelatedLiterals(literal, provability);
+		if (null == relatedLiterals) return null;
+
+		Set<Literal> extractedLiterals = new TreeSet<Literal>();
+		Temporal literalTemporal = literal.getTemporal();
+		for (Literal l : relatedLiterals) {
+			Temporal lt = l.getTemporal();
+			if (null == literalTemporal || null == lt) {
+				extractedLiterals.add(l);
+			} else {
+				if (literalTemporal.overlap(lt)) extractedLiterals.add(l);
+			}
+		}
+		return extractedLiterals;
 	}
 
 	public Map<String, Set<String>> getStrongModeSet() {
@@ -470,6 +576,8 @@ public class Theory extends TheoryCore implements Cloneable {
 			updateConflictModeRules();
 			resetConversionRulesModified();
 			resetConflictRulesModified();
+			resetExclusionRulesModified();
+			sameConflictLiteralsStore.clear();
 			conflictLiteralsStore.clear();
 		}
 	}
