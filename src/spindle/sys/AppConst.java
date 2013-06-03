@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -30,13 +30,8 @@ package spindle.sys;
  */
 public interface AppConst {
 	boolean isDeploy = true;
-
-	boolean isVerifyConflictRules = true;
-
-	boolean isPrintConclusionByType = true;
-	boolean isPrintExtendedRuleInfo = false;
-
-	boolean isCloneRuleBodyLiterals = false;
+	
+	int INITIAL_PENDING_CONCLUSIONS_QUEUE_CAPACITY=10;
 
 	String IDENTATOR = "    ";
 	String LIST_SYMBOL = AppConst.IDENTATOR + "+-- ";
@@ -44,7 +39,7 @@ public interface AppConst {
 	String ARGUMENT_PREFIX = "--";
 
 	String APP_TITLE = "SPINdle";
-	String APP_VERSION = "2.2.0";
+	String APP_VERSION = "2.2.2";
 	String APP_COPYRIGHT_MESSAGE = "Copyright (C) 2009-2012 NICTA Ltd.\n" //
 			+ "This software and its documentation is distributed under the terms of the\n"//
 			+ "FSF Lesser GNU Public License (LGPL).\n"//
@@ -56,35 +51,22 @@ public interface AppConst {
 
 	String APP_USAGE = "Usage: java -jar spindle.jar [--options] [file1|dir1|url1] [file2|dir2|url2]...\n\n" //
 			+ "where options include:\n" //
-			+ ARGUMENT_PREFIX + ConfTag.APP_VERSION
-			+ "\t\t\tshow software version\n"//
-			+ ARGUMENT_PREFIX + ConfTag.APP_LICENSE
-			+ "\t\t\tshow software license\n"//
+			+ ARGUMENT_PREFIX + ConfTag.APP_VERSION + "\t\t\tshow software version\n"//
+			+ ARGUMENT_PREFIX + ConfTag.APP_LICENSE + "\t\t\tshow software license\n"//
 			+ "\n" //
-			+ ARGUMENT_PREFIX + ConfTag.USE_CONSOLE
-			+ "\t\t\trun in console mode\n" //
+			+ ARGUMENT_PREFIX + ConfTag.USE_CONSOLE + "\t\t\trun in console mode\n" //
 			+ "\n" //
-			+ ARGUMENT_PREFIX + ConfTag.LOG_LEVEL
-			+ "\t\t\tlog level (ALL,INFO,FINE,FINEST,etc)\n" //
-			+ ARGUMENT_PREFIX + ConfTag.IS_SHOW_PROGRESS
-			+ "\t\tshow progress time interval\n"//
-			+ ARGUMENT_PREFIX + ConfTag.IS_SHOW_RESULT
-			+ "\t\tshow result on screen\n"//
-			+ ARGUMENT_PREFIX + ConfTag.IS_SHOW_STATISTICS
-			+ "\t\tshow computational statistics\n"//
-			+ ARGUMENT_PREFIX + ConfTag.APP_PROGRESS_TIME_INTERVAL
-			+ "\tshow progress time interval\n"//
-			+ ARGUMENT_PREFIX + ConfTag.IS_SEARCH_IO_CLASSES
-			+ "\t\tsearch for I/O classes\n"//
-			+ ARGUMENT_PREFIX + ConfTag.IS_SAVE_RESULT
-			+ "\t\tsave the conclusions derived\n"//
-			+ ARGUMENT_PREFIX + ConfTag.APP_RESULT_FOLDER
-			+ "\t\tfolder for storing conclusions\n"//
+			+ ARGUMENT_PREFIX + ConfTag.LOG_LEVEL + "\t\t\tlog level (ALL,INFO,FINE,FINEST,etc)\n" //
+			+ ARGUMENT_PREFIX + ConfTag.IS_SHOW_PROGRESS + "\t\tshow progress time interval\n"//
+			+ ARGUMENT_PREFIX + ConfTag.IS_SHOW_RESULT + "\t\tshow result on screen\n"//
+			+ ARGUMENT_PREFIX + ConfTag.IS_SHOW_STATISTICS + "\t\tshow computational statistics\n"//
+			+ ARGUMENT_PREFIX + ConfTag.APP_PROGRESS_TIME_INTERVAL + "\tshow progress time interval\n"//
+			+ ARGUMENT_PREFIX + ConfTag.IS_SEARCH_IO_CLASSES + "\t\tsearch for I/O classes\n"//
+			+ ARGUMENT_PREFIX + ConfTag.IS_SAVE_RESULT + "\t\tsave the conclusions derived\n"//
+			+ ARGUMENT_PREFIX + ConfTag.APP_RESULT_FOLDER + "\t\tfolder for storing conclusions\n"//
 			+ "\n" //
-			+ ARGUMENT_PREFIX + ConfTag.REASONER_VERSION
-			+ "\t\treasoner version to be used (1 or 2)\n" //
-			+ ARGUMENT_PREFIX + ConfTag.IS_LOG_INFERENCE_PROCESS
-			+ "\t\ttrue for log rule inference status while reasoning\n"//
+			+ ARGUMENT_PREFIX + ConfTag.REASONER_VERSION + "\t\treasoner version to be used (1 or 2)\n" //
+			+ ARGUMENT_PREFIX + ConfTag.IS_LOG_INFERENCE_PROCESS + "\t\ttrue for log rule inference status while reasoning\n"//
 			+ "\n" //
 			+ ARGUMENT_PREFIX + ConfTag.REASONER_AMBIGUOUS_PROPAGATION + "\ttrue for ambiguit propagation support\n"//
 			+ ARGUMENT_PREFIX + ConfTag.REASONER_WELL_FOUNDED_SEMANTICS + "\ttrue for well-founded semantics support\n"//
@@ -101,6 +83,8 @@ public interface AppConst {
 
 	String IO_CONF_FILE = "/spindle/resources/io_conf.xml";
 
+	String XML_SCHEMA_FILE="spindleDefeasibleTheory2.xsd";
+	
 	String MESSAGE_FILE_SYSTEM = "spindle.resources.SystemMessages";
 	String MESSAGE_FILE_ERROR = "spindle.resources.ErrorMessages";
 

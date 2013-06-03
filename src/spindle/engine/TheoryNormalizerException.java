@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -36,6 +36,10 @@ public class TheoryNormalizerException extends SpindleException {
 
 	public TheoryNormalizerException(Class<?> caller, String errorTag) {
 		this(caller, errorTag, null, null);
+	}
+
+	public TheoryNormalizerException(Class<?> caller, Throwable cause) {
+		this(caller, null, null, cause);
 	}
 
 	public TheoryNormalizerException(Class<?> caller, String errorTag, Throwable cause) {
