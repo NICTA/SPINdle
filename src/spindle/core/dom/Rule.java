@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import spindle.sys.AppConst;
+import spindle.sys.AppFeatureConst;
 import spindle.sys.message.ErrorMessage;
 
 /**
@@ -47,9 +47,7 @@ public class Rule implements Comparable<Object>, Cloneable, Serializable {
 	protected RuleType ruleType;
 	protected Mode mode;
 
-	// private long delay = -1;
 	protected Temporal temporal;
-	// private Temporal ruleTemporalInfo;
 
 	protected Set<Literal> body = null;
 	protected List<Literal> head = null;
@@ -63,7 +61,6 @@ public class Rule implements Comparable<Object>, Cloneable, Serializable {
 		head = new ArrayList<Literal>();
 		setMode(null);
 		setTemporal(null);
-		// ruleTemporalInfo=new Temporal();
 	}
 
 	public Rule(Rule rule) {
@@ -88,8 +85,10 @@ public class Rule implements Comparable<Object>, Cloneable, Serializable {
 	}
 
 	public void addHeadLiteral(final Literal literal) throws RuleException {
-		if (null == literal || "".equals(literal.getName()))
-			throw new RuleException(ErrorMessage.LITERAL_NAME_MISSING);
+	//	addHeadLiteral(literal,true);
+//	}
+//	public void addHeadLiteral(final Literal literal,boolean checkLiteralVariable) throws RuleException {
+		if (null == literal || "".equals(literal.getName())) throw new RuleException(ErrorMessage.LITERAL_NAME_MISSING);
 
 		if ((ruleType != RuleType.DEFEASIBLE) && head.size() > 0) {
 			// only defeasible rule is allowed to have
@@ -100,7 +99,6 @@ public class Rule implements Comparable<Object>, Cloneable, Serializable {
 		} else {
 			head.add(literal);
 		}
-		// updateRuleTemporalInfo(literal.getTemporal());
 	}
 
 	public void removeHeadLiteral(final Literal literal) {
@@ -125,10 +123,8 @@ public class Rule implements Comparable<Object>, Cloneable, Serializable {
 	}
 
 	public void addBodyLiteral(final Literal literal) throws RuleException {
-		if (null == literal || "".equals(literal.getName()))
-			throw new RuleException(ErrorMessage.LITERAL_NAME_MISSING);
+		if (null == literal || "".equals(literal.getName())) throw new RuleException(ErrorMessage.LITERAL_NAME_MISSING);
 		body.add(literal);
-		// updateRuleTemporalInfo(literal.getTemporal());
 	}
 
 	public void removeBodyLiteral(final Literal literal) {
@@ -141,7 +137,7 @@ public class Rule implements Comparable<Object>, Cloneable, Serializable {
 
 	public List<Literal> getBodyLiterals() {
 		List<Literal> literalList = new ArrayList<Literal>();
-		if (AppConst.isCloneRuleBodyLiterals) {
+		if (AppFeatureConst.isCloneRuleBodyLiterals) {
 			for (Literal bodyLiteral : body) {
 				literalList.add(bodyLiteral.clone());
 			}
@@ -186,29 +182,36 @@ public class Rule implements Comparable<Object>, Cloneable, Serializable {
 	}
 
 	public void setTemporal(Temporal temporal) {
-		if (null == temporal || !temporal.containsTemporalInfo())
-			this.temporal = null;
+		if (null == temporal || !temporal.hasTemporalInfo()) this.temporal = null;
 		else this.temporal = temporal.clone();
-		// updateRuleTemporalInfo(this.temporal);
 	}
 
-	// protected void updateRuleTemporalInfo(Temporal newTemporal){
-	// if (null==newTemporal)return;
-	// if (newTemporal.startTime<ruleTemporalInfo.startTime) ruleTemporalInfo.setStartTime(newTemporal.startTime);
-	// if (newTemporal.endTime>ruleTemporalInfo.endTime)ruleTemporalInfo.setEndTime(newTemporal.endTime);
-	// }
+	private boolean isLiteralsContainsTemporalInfo() {
+		for (Literal literal : head) {
+			if (literal.hasTemporalInfo()) return true;
+		}
+		for (Literal literal : body) {
+			if (literal.hasTemporalInfo()) return true;
+		}
+		return false;
+	}
 
-	// public void setDelay(long delay) {
-	// this.delay = (delay < 0) ? -1 : delay;
-	// }
-	//
-	// public long getDelay() {
-	// return delay;
-	// }
+	public boolean hasTemporalInfo() {
+		return null != temporal && temporal.hasTemporalInfo() || isLiteralsContainsTemporalInfo();
+	}
 
-	public boolean containsTemporalInfo() {
-		return null != temporal && temporal.containsTemporalInfo();
-		// return delay > 0;
+	private boolean isLiteralsContainsModalInfo() {
+		for (Literal literal : head) {
+			if (!"".equals(literal.getMode().getName())) return true;
+		}
+		for (Literal literal : body) {
+			if (!"".equals(literal.getMode().getName())) return true;
+		}
+		return false;
+	}
+
+	public boolean hasModalInfo() {
+		return !"".equals(mode.getName()) || isLiteralsContainsModalInfo();
 	}
 
 	public RuleType getRuleType() {
@@ -281,8 +284,7 @@ public class Rule implements Comparable<Object>, Cloneable, Serializable {
 		if (modeUsedInBody.size() == 0) {
 		} else {
 			for (Literal literal : newRule.body) {
-				if (!toMode.equals(literal.getMode()))
-					throw new RuleModeConversionException("inconsistent mode found in rule body");
+				if (!toMode.equals(literal.getMode())) throw new RuleModeConversionException("inconsistent mode found in rule body");
 			}
 		}
 		if (!toMode.equals(newRule.getMode())) {
@@ -346,6 +348,7 @@ public class Rule implements Comparable<Object>, Cloneable, Serializable {
 		}
 		sb.append(ruleType.getSymbol());
 		if (head.size() > 0) {
+			sb.append(" ");
 			c = 0;
 			for (Literal literal : head) {
 				if (c > 0) sb.append(LITERAL_SEPARATOR);

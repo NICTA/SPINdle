@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -68,6 +68,9 @@ public interface DomConst extends AppConst {
 		char LITERAL_BOOLEAN_FUNCTION_POSTFIX = '$';
 
 		char THEORY_EQUAL_SIGN = '=';
+		
+		String TEMPORAL_POSITIVE_INFINITY="+inf";
+		String TEMPORAL_NEGATIVE_INFINITY="-inf";
 	}
 
 }

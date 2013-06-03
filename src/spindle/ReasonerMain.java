@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -87,7 +87,7 @@ public class ReasonerMain {
 				reasoner.removeDefeater();
 				ps.setEndTimeDefeaterRemoval();
 			}
-
+			
 			switch (Conf.getReasonerVersion()) {
 			case 1:
 				if (theory.getSuperiorityCount() > 0) {
@@ -98,7 +98,7 @@ public class ReasonerMain {
 				break;
 			default:
 			}
-
+			
 			ps.setStartReasoning();
 			reasoner.getConclusions();
 			ps.setEndReasoning();

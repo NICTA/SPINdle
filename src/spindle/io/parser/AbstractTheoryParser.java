@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 
+import com.app.utils.TextUtilities;
+
 import spindle.core.dom.AppConstants;
 import spindle.core.dom.Conclusion;
 import spindle.core.dom.ConclusionType;
@@ -57,6 +59,7 @@ import spindle.sys.message.SystemMessage;
  * @version Last modified 2011.07.27
  * @since version 1.0.0
  */
+@SuppressWarnings("deprecation")
 public abstract class AbstractTheoryParser extends AppModuleBase implements TheoryParser {
 
 	protected static final String SYMBOL_NEGATION = DflTheoryConst.SYMBOL_NEGATION;
@@ -70,8 +73,7 @@ public abstract class AbstractTheoryParser extends AppModuleBase implements Theo
 
 	protected AbstractTheoryParser(final String parserType) {
 		super();
-		if (null == parserType) throw new IllegalArgumentException(
-				Messages.getErrorMessage(ErrorMessage.IO_PARSER_TYPE_NULL));
+		if (null == parserType) throw new IllegalArgumentException(Messages.getErrorMessage(ErrorMessage.IO_PARSER_TYPE_NULL));
 		this.parserType = parserType.trim().toLowerCase();
 		pendingRules = new ArrayList<Rule>();
 	}
@@ -84,20 +86,33 @@ public abstract class AbstractTheoryParser extends AppModuleBase implements Theo
 		pendingRules.add(rule);
 	}
 
-	protected void printSummaries(Theory theory) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Theory contains:\n")
-				.append(theory.getLiteralVariableCount() + theory.getLiteralBooleanFunctionsInRulesCount())
-				.append(" literal variable(s)")//
-				.append("\n").append(theory.getModeConversionRulesCount()).append(" mode conversion rule(s)")//
-				.append("\n").append(theory.getModeConflictRulesCount()).append(" mode conflict rule(s)")//
-				.append("\n").append("\n").append(theory.getFactsCount()).append(" fact") //
-				.append("\n").append(theory.getStrictRulesCount()).append(" strict rule(s)")//
-				.append("\n").append(theory.getDefeasibleRulesCount()).append(" defeasible rule(s)")//
-				.append("\n").append(theory.getDefeatersCount()).append(" defeater(s)") //
-				.append("\n").append(theory.getSuperiorityCount()).append(" superiority relation(s)");
-		String summaries = sb.toString();
+	private void addSummaryContentString(StringBuilder sb, int counter, String label) {
+		if (counter < 1) return;
+		sb.append("\n").append(counter).append(" ").append(label);
+		if (counter > 1) sb.append("s");
+	}
 
+	protected void printSummaries(Theory theory) {
+		StringBuilder sbMisc = new StringBuilder();
+		addSummaryContentString(sbMisc, theory.getLiteralVariableCount() + theory.getLiteralBooleanFunctionsInRulesCount(),
+				RuleType.LITERAL_VARIABLE_SET.getLabel());
+		addSummaryContentString(sbMisc, theory.getModeConversionRulesCount(), RuleType.MODE_CONVERSION.getLabel() + " rule");
+		addSummaryContentString(sbMisc, theory.getModeConflictRulesCount(), RuleType.MODE_CONFLICT.getLabel() + " rule");
+		addSummaryContentString(sbMisc, theory.getModeExclusionRulesCount(), RuleType.MODE_EXCLUSION.getLabel() + " rule");
+
+		StringBuilder sbRules = new StringBuilder();
+		addSummaryContentString(sbRules, theory.getFactsCount(), RuleType.FACT.getLabel() + " rule");
+		addSummaryContentString(sbRules, theory.getStrictRulesCount(), RuleType.STRICT.getLabel() + " rule");
+		addSummaryContentString(sbRules, theory.getDefeasibleRulesCount(), RuleType.DEFEASIBLE.getLabel() + " rule");
+		addSummaryContentString(sbRules, theory.getDefeatersCount(), RuleType.DEFEATER.getLabel() + " rule");
+		addSummaryContentString(sbRules, theory.getSuperiorityCount(), RuleType.SUPERIORITY.getLabel() + " rule");
+
+		StringBuilder sb = new StringBuilder(Messages.getSystemMessage(SystemMessage.THEORY_THEORY_CONTAINS));
+		sb.append(":").append(sbMisc);
+		if (sbMisc.length() > 0) sb.append("\n");
+		sb.append(sbRules);
+
+		String summaries = TextUtilities.generateHighLightedMessage(sb.toString());
 		if (!Conf.isConsoleMode()) System.out.println(summaries);
 		logMessage(Level.INFO, 0, summaries);
 	}
@@ -115,32 +130,28 @@ public abstract class AbstractTheoryParser extends AppModuleBase implements Theo
 		logMessage(Level.INFO, 0, sb.toString());
 	}
 
-	protected void addLiteralVariable(LiteralVariable literalVariableName, LiteralVariable literalVariableValue)
-			throws TheoryException {
+	protected void addLiteralVariable(LiteralVariable literalVariableName, LiteralVariable literalVariableValue) throws TheoryException {
 		logMessage(
 				Level.INFO,
 				1,
-				Messages.getSystemMessage(SystemMessage.THEORY_ADD_NEW_LITERAL_VARIABLE, new Object[] {
-						literalVariableName, literalVariableValue }));
+				Messages.getSystemMessage(SystemMessage.THEORY_ADD_NEW_LITERAL_VARIABLE, new Object[] { literalVariableName,
+						literalVariableValue }));
 		theory.addLiteralVariable(literalVariableName, literalVariableValue);
 	}
 
 	protected void addRule(Rule rule) throws TheoryException {
 		switch (rule.getRuleType()) {
 		case FACT:
-			logMessage(Level.INFO, 1,
-					Messages.getSystemMessage(SystemMessage.THEORY_ADD_NEW_FACT, new Object[] { rule }));
+			logMessage(Level.INFO, 1, Messages.getSystemMessage(SystemMessage.THEORY_ADD_NEW_FACT, new Object[] { rule }));
 			theory.addFact(rule);
 			break;
 		case STRICT:
 		case DEFEASIBLE:
-			logMessage(Level.INFO, 1,
-					Messages.getSystemMessage(SystemMessage.THEORY_ADD_NEW_RULE, new Object[] { rule }));
+			logMessage(Level.INFO, 1, Messages.getSystemMessage(SystemMessage.THEORY_ADD_NEW_RULE, new Object[] { rule }));
 			theory.addRule(rule);
 			break;
 		case DEFEATER:
-			logMessage(Level.INFO, 1,
-					Messages.getSystemMessage(SystemMessage.THEORY_ADD_NEW_DEFEATER, new Object[] { rule }));
+			logMessage(Level.INFO, 1, Messages.getSystemMessage(SystemMessage.THEORY_ADD_NEW_DEFEATER, new Object[] { rule }));
 			theory.addRule(rule);
 			break;
 		default:
@@ -149,20 +160,18 @@ public abstract class AbstractTheoryParser extends AppModuleBase implements Theo
 	}
 
 	protected void addSuperiority(Superiority superiority) throws TheoryException {
-		logMessage(Level.INFO, 1, Messages.getSystemMessage(SystemMessage.THEORY_ADD_NEW_SUPERIORITY_RELATION,
-				new Object[] { superiority }));
+		logMessage(Level.INFO, 1,
+				Messages.getSystemMessage(SystemMessage.THEORY_ADD_NEW_SUPERIORITY_RELATION, new Object[] { superiority }));
 		theory.add(superiority);
 	}
 
 	protected void addModeConversionRule(String modeName, String[] convertModes) throws TheoryException {
-		logMessage(Level.INFO, 1,
-				Messages.getSystemMessage(SystemMessage.THEORY_ADD_NEW_MODE_CONVERSION_RULE, new Object[] { modeName }));
+		logMessage(Level.INFO, 1, Messages.getSystemMessage(SystemMessage.THEORY_ADD_NEW_MODE_CONVERSION_RULE, new Object[] { modeName }));
 		theory.addModeConversionRules(modeName, convertModes);
 	}
 
 	protected void addModeConflictRule(String modeName, String[] conflictModes) throws TheoryException {
-		logMessage(Level.INFO, 1,
-				Messages.getSystemMessage(SystemMessage.THEORY_ADD_NEW_MODE_CONFLICT_RULE, new Object[] { modeName }));
+		logMessage(Level.INFO, 1, Messages.getSystemMessage(SystemMessage.THEORY_ADD_NEW_MODE_CONFLICT_RULE, new Object[] { modeName }));
 		theory.addModeConflictRules(modeName, conflictModes);
 	}
 
@@ -227,7 +236,7 @@ public abstract class AbstractTheoryParser extends AppModuleBase implements Theo
 			}
 		}
 
-		if (null == conclusions) throw new ParserException(ErrorMessage.CONCLUSION_NULL_CONCLUSION);
+		if (null == conclusions) throw new ParserException(ErrorMessage.CONCLUSION_NULL_CONCLUSIONS_SET);
 		if (Conf.isShowProgress()) printSummaries(conclusions);
 
 		return conclusions;
@@ -240,8 +249,7 @@ public abstract class AbstractTheoryParser extends AppModuleBase implements Theo
 
 	protected abstract void generateTheory(InputStream ins) throws ParserException;
 
-	protected abstract Map<Literal, Map<ConclusionType, Conclusion>> generateConclusions(InputStream ins)
-			throws ParserException;
+	protected abstract Map<Literal, Map<ConclusionType, Conclusion>> generateConclusions(InputStream ins) throws ParserException;
 
 	// //////////////////////////////////////////////
 	// for DFL document
@@ -263,6 +271,7 @@ public abstract class AbstractTheoryParser extends AppModuleBase implements Theo
 	// //////////////////////////////////////////////
 	// for XML document
 	//
+	@Deprecated
 	protected Tag getXmlTag(String elementName) {
 		for (Tag tag : Tag.values()) {
 			if (tag.getXmlTag().equals(elementName)) return tag;
@@ -270,6 +279,7 @@ public abstract class AbstractTheoryParser extends AppModuleBase implements Theo
 		return null;
 	}
 
+	@Deprecated
 	protected Attribute getAttributeTag(String attributeName) {
 		for (Attribute att : Attribute.values()) {
 			if (att.getAttributeName().equals(attributeName)) return att;
@@ -278,10 +288,11 @@ public abstract class AbstractTheoryParser extends AppModuleBase implements Theo
 	}
 
 	protected RuleType getRuleType_xml(String str) throws ParserException {
-		if (Attribute.RULE_TYPE_STRICT_RULE.getAttributeValue().equals(str)) return RuleType.STRICT;
-		if (Attribute.RULE_TYPE_DEFEASIBLE_RULE.getAttributeValue().equals(str)) return RuleType.DEFEASIBLE;
-		if (Attribute.RULE_TYPE_DEFEATER.getAttributeValue().equals(str)) return RuleType.DEFEATER;
-		throw new ParserException("unknown rule type");
+		return RuleType.valueOf(str);		
+//		if (Attribute.RULE_TYPE_STRICT_RULE.getAttributeValue().equals(str)) return RuleType.STRICT;
+//		if (Attribute.RULE_TYPE_DEFEASIBLE_RULE.getAttributeValue().equals(str)) return RuleType.DEFEASIBLE;
+//		if (Attribute.RULE_TYPE_DEFEATER.getAttributeValue().equals(str)) return RuleType.DEFEATER;
+//		throw new ParserException("unknown rule type");
 	}
 
 	protected ConclusionType getConclusionType_xml(String str) throws ParserException {

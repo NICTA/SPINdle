@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -52,9 +52,13 @@ import spindle.io.outputter.XmlTag.Tag;
 /**
  * Defeasible theory and conclusions outputter in XML.
  * 
+ * @deprecated As of version 2.2.2, the XML theory outputter class {@link spindle.io.outputter.XmlTheoryOutputter} is replaced by {@link spindle.io.outputter.XmlTheoryOutputter2}.
  * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
  * @since version 1.0.0
+ * @version Last modified 2013.05.30
+ * @see spindle.io.outputter.XmlTheoryOutputter2
  */
+@Deprecated
 public class XmlTheoryOutputter extends AbstractTheoryOutputter {
 	public static final String OUTPUTTER_TYPE = "xml";
 
