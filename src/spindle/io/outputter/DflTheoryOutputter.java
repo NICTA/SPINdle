@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -46,13 +46,14 @@ import spindle.io.OutputterException;
  * 
  * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
  * @since version 1.0.0
+ * @version Last modified 2012.05.30
  */
 public class DflTheoryOutputter extends AbstractTheoryOutputter {
 	public static final String OUTPUTTER_TYPE = "dfl";
 
 	private static StringBuilder THEORY_COMMENT = null;
 	private static StringBuilder CONCLUSION_COMMENT = null;
-	
+
 	static {
 		String NEW_LINE_AND_COMMENT = LINE_SEPARATOR + DflTheoryConst.COMMENT_SYMBOL;
 
@@ -65,17 +66,14 @@ public class DflTheoryOutputter extends AbstractTheoryOutputter {
 					.append("[").append(ruleType.getSymbol()).append("] ")//
 					.append(ruleType.getLabel()).append(LINE_SEPARATOR);
 		}
-		THEORY_COMMENT
-				.append("#")
+		THEORY_COMMENT.append("#")
 				//
-				.append(NEW_LINE_AND_COMMENT).append(" [").append(DflTheoryConst.SYMBOL_NEGATION)
-				.append("] negation")
+				.append(NEW_LINE_AND_COMMENT).append(" [").append(DflTheoryConst.SYMBOL_NEGATION).append("] negation")
 				//
-				.append(NEW_LINE_AND_COMMENT).append(NEW_LINE_AND_COMMENT).append(" [")
-				.append(DflTheoryConst.SYMBOL_MODE_CONVERSION).append("] mode conversion")
+				.append(NEW_LINE_AND_COMMENT).append(NEW_LINE_AND_COMMENT).append(" [").append(DflTheoryConst.SYMBOL_MODE_CONVERSION)
+				.append("] mode conversion")
 				//
-				.append(NEW_LINE_AND_COMMENT).append(" [").append(DflTheoryConst.SYMBOL_MODE_CONFLICT)
-				.append("] mode conflict")//
+				.append(NEW_LINE_AND_COMMENT).append(" [").append(DflTheoryConst.SYMBOL_MODE_CONFLICT).append("] mode conflict")//
 				.append(LINE_SEPARATOR);
 		THEORY_COMMENT.append("########################################").append(LINE_SEPARATOR).append(LINE_SEPARATOR);
 
@@ -97,8 +95,7 @@ public class DflTheoryOutputter extends AbstractTheoryOutputter {
 			default:
 			}
 		}
-		CONCLUSION_COMMENT.append("########################################").append(LINE_SEPARATOR)
-				.append(LINE_SEPARATOR);
+		CONCLUSION_COMMENT.append("########################################").append(LINE_SEPARATOR).append(LINE_SEPARATOR);
 	}
 
 	public DflTheoryOutputter() {
@@ -122,7 +119,7 @@ public class DflTheoryOutputter extends AbstractTheoryOutputter {
 
 			saveLiteralVariables(theory.getLiteralVariables(), "Literal variables");
 			saveLiteralVariables(theory.getLiteralBooleanFunctions(), "Literal boolean functions");
-			saveConversionRules(theory.getAllModeConversionRules(), theory.getAllModeConflictRules());
+			saveConversionRules(theory.getAllModeConversionRules(), theory.getAllModeConflictRules(), theory.getAllModeExclusionRules());
 			saveFactsAndAllRules(theory.getFactsAndAllRules().values());
 			saveSuperiority(theory.getAllSuperiority());
 		} catch (Exception e) {
@@ -130,8 +127,7 @@ public class DflTheoryOutputter extends AbstractTheoryOutputter {
 		}
 	}
 
-	private void saveLiteralVariables(Map<LiteralVariable, LiteralVariable> literalVariables, String label)
-			throws IOException {
+	private void saveLiteralVariables(Map<LiteralVariable, LiteralVariable> literalVariables, String label) throws IOException {
 		if (literalVariables.size() > 0) {
 			if (null != label && !"".equals(label)) {
 				writer.write(DflTheoryConst.COMMENT_SYMBOL + " " + label.trim());
@@ -148,23 +144,28 @@ public class DflTheoryOutputter extends AbstractTheoryOutputter {
 	}
 
 	private void saveConversionRules(Map<String, Set<String>> conversionRules, //
-			Map<String, Set<String>> conflictRules) throws IOException {
+			Map<String, Set<String>> conflictRules, Map<String, Set<String>> exclusionRules) throws IOException {
 
 		List<String> modeUsed = new Vector<String>();
 		modeUsed.addAll(conversionRules.keySet());
 		for (String m : conflictRules.keySet()) {
 			if (!modeUsed.contains(m)) modeUsed.add(m);
 		}
+		for (String m : exclusionRules.keySet()) {
+			if (!modeUsed.contains(m)) modeUsed.add(m);
+		}
 
 		for (String mode : modeUsed) {
 			if (null != conversionRules.get(mode)) {
-				writer.write(generateConversionRuleStr(mode, conversionRules.get(mode),
-						DflTheoryConst.SYMBOL_MODE_CONVERSION));
+				writer.write(generateConversionRuleStr(mode, conversionRules.get(mode), DflTheoryConst.SYMBOL_MODE_CONVERSION));
 				writer.write(LINE_SEPARATOR);
 			}
 			if (null != conflictRules.get(mode)) {
-				writer.write(generateConversionRuleStr(mode, conflictRules.get(mode),
-						DflTheoryConst.SYMBOL_MODE_CONFLICT));
+				writer.write(generateConversionRuleStr(mode, conflictRules.get(mode), DflTheoryConst.SYMBOL_MODE_CONFLICT));
+				writer.write(LINE_SEPARATOR);
+			}
+			if (null != exclusionRules.get(mode)) {
+				writer.write(generateConversionRuleStr(mode, exclusionRules.get(mode), DflTheoryConst.SYMBOL_MODE_EXCLUSION));
 				writer.write(LINE_SEPARATOR);
 			}
 			writer.write(LINE_SEPARATOR);
@@ -174,9 +175,10 @@ public class DflTheoryOutputter extends AbstractTheoryOutputter {
 	private String generateConversionRuleStr(String mode, Set<String> modeList, String typeStr) {
 		StringBuilder sb = new StringBuilder();
 		for (String m : modeList) {
-			sb.append(",").append(m);
+			if (sb.length() > 0) sb.append(",");
+			sb.append(m);
 		}
-		return mode + " " + typeStr + " " + sb.toString().substring(1);
+		return mode + " " + typeStr + " " + sb.toString();
 	}
 
 	private void saveFactsAndAllRules(Collection<Rule> rules) throws IOException {
@@ -196,8 +198,7 @@ public class DflTheoryOutputter extends AbstractTheoryOutputter {
 			}
 
 			String ruleStr = rule.getRuleAsString();
-			writer.write(ruleStr
-					.replaceAll("" + DomConst.Literal.LITERAL_NEGATION_SIGN, DflTheoryConst.SYMBOL_NEGATION));
+			writer.write(ruleStr.replaceAll("" + DomConst.Literal.LITERAL_NEGATION_SIGN, DflTheoryConst.SYMBOL_NEGATION));
 			writer.write(LINE_SEPARATOR);
 		}
 		writer.write(LINE_SEPARATOR);
@@ -222,8 +223,7 @@ public class DflTheoryOutputter extends AbstractTheoryOutputter {
 
 			for (Conclusion conclusion : conclusionsAsList) {
 				String conclusionStr = conclusion.getLiteral().toString();
-				conclusionStr = conclusionStr.replaceAll("" + DomConst.Literal.LITERAL_NEGATION_SIGN,
-						DflTheoryConst.SYMBOL_NEGATION);
+				conclusionStr = conclusionStr.replaceAll("" + DomConst.Literal.LITERAL_NEGATION_SIGN, DflTheoryConst.SYMBOL_NEGATION);
 
 				ConclusionType conclusionType = conclusion.getConclusionType();
 				writer.write(conclusionType.getSymbol() + " " + conclusionStr + LINE_SEPARATOR);

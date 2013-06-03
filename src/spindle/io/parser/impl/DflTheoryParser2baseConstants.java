@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -80,51 +80,55 @@ public interface DflTheoryParser2baseConstants {
   /** RegularExpression Id. */
   int LITERAL_VARIABLE = 24;
   /** RegularExpression Id. */
-  int DATE_TIME_STRING = 25;
+  int NEG_INF = 25;
   /** RegularExpression Id. */
-  int ASSIGN = 26;
+  int DATE_TIME_STRING = 26;
   /** RegularExpression Id. */
-  int NUMBER = 27;
+  int ASSIGN = 27;
   /** RegularExpression Id. */
-  int STRING = 28;
+  int NUMBER = 28;
   /** RegularExpression Id. */
-  int LITERAL_NAME = 29;
+  int STRING = 29;
   /** RegularExpression Id. */
-  int EOL = 30;
+  int LITERAL_NAME = 30;
   /** RegularExpression Id. */
-  int EQUALS = 31;
+  int EOL = 31;
   /** RegularExpression Id. */
-  int NOT_EQUALS = 32;
+  int EQUALS = 32;
   /** RegularExpression Id. */
-  int GREATER_OR_EQUAL = 33;
+  int NOT_EQUALS = 33;
   /** RegularExpression Id. */
-  int LESSER_OR_EQUAL = 34;
+  int EXCLUDED = 34;
   /** RegularExpression Id. */
-  int PLUS = 35;
+  int GREATER_OR_EQUAL = 35;
   /** RegularExpression Id. */
-  int MINUS = 36;
+  int LESSER_OR_EQUAL = 36;
   /** RegularExpression Id. */
-  int MULTIPLY = 37;
+  int PLUS = 37;
   /** RegularExpression Id. */
-  int DIVIDE = 38;
+  int MINUS = 38;
   /** RegularExpression Id. */
-  int GREATER = 39;
+  int MULTIPLY = 39;
   /** RegularExpression Id. */
-  int LESSER = 40;
+  int DIVIDE = 40;
   /** RegularExpression Id. */
-  int DEFINITE_PROVABLE = 41;
+  int GREATER = 41;
   /** RegularExpression Id. */
-  int DEFINITE_NOT_PROVABLE = 42;
+  int LESSER = 42;
   /** RegularExpression Id. */
-  int DEFEASIBLE_PROVABLE = 43;
+  int DEFINITE_PROVABLE = 43;
   /** RegularExpression Id. */
-  int DEFEASIBLE_NOT_PROVABLE = 44;
+  int DEFINITE_NOT_PROVABLE = 44;
   /** RegularExpression Id. */
-  int LITERAL_VARIABLE_STRING = 45;
+  int DEFEASIBLE_PROVABLE = 45;
   /** RegularExpression Id. */
-  int NOT_EOL = 46;
+  int DEFEASIBLE_NOT_PROVABLE = 46;
   /** RegularExpression Id. */
-  int OTHER = 47;
+  int LITERAL_VARIABLE_STRING = 47;
+  /** RegularExpression Id. */
+  int NOT_EOL = 48;
+  /** RegularExpression Id. */
+  int OTHER = 49;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -158,6 +162,7 @@ public interface DflTheoryParser2baseConstants {
     "\"set\"",
     "\"@DURATION\"",
     "\"@\"",
+    "\"-inf\"",
     "<DATE_TIME_STRING>",
     "\"=\"",
     "<NUMBER>",
@@ -166,6 +171,7 @@ public interface DflTheoryParser2baseConstants {
     "\"\\n\"",
     "\"==\"",
     "\"!=\"",
+    "\"<>\"",
     "\">=\"",
     "\"<=\"",
     "\"+\"",
