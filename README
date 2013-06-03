@@ -1,0 +1,132 @@
+
+=======
+SPINdle
+-------
+SPINdle (version 2.2.2)                                       
+Copyright (C) 2009-2012 NICTA Ltd.
+
+
+This software and its documentation is distributed under the terms of the
+FSF Lesser GNU Public License (see LICESNE for details).
+                  
+This program comes with ABSOLUTELY NO WARRANTY; This is free software, and 
+you are welcome to redistribute it under certain conditions; for details type:                                 
+                  java -jar spindle-<version>.jar --license       
+
+This release of SPINdle requires JDK 1.6 (or above).
+
+
+===========
+Description
+-----------
+This software, written in Java, implements reasoner to compute the consequence
+of theories in defeasible logic.  The implementation covers both basic 
+defeasible logic and modal defeasible logic.  In version 1.x.x, the inference 
+process for basic defeasible logic is implemented based on the algorithm 
+proposed by Maher[1] and the reasoner for modal defeasible logics implements the 
+algorithms of Governatori & Rotolo[2]; while in version 2.x.x, the 
+implementations (for both SDL and MDL) are based on the new reasoning algorithm 
+as described in Lam & Governatori [3].
+
+The different of approaches used in version 1.x.x and 2.x.x is due to the fact
+that, in Maher's approach, the support of literals under superiority relations 
+cannot be blocked after the superiority removal transformation. That is, in 
+situations where an inferior rule was defeated by a superior rule, the support
+of the inferior rule still exist which subsequently affecting the conclusions
+being derived.
+
+However, in version 2.x.x, this problem is resolved since the new approach that 
+we devised did not require the removal of superiority relations, and can 
+preserve all the representational properties of the defeasible theories.
+ 
+
+=============
+Using SPINdle
+-------------
+To use SPINdle, type:
+  java -jar spindle-<version>.jar [--options] [file1 | dir1] [file2 | dir2] ...
+
+where options include:
+    --version                       show software version
+    --license                       show software license
+
+    --console 						run in console mode
+    
+    --log.level                     log level (ALL,INFO,FINE,FINEST,etc)
+    --app.showProgress              is show reasoning progress
+    --app.showProgress.timeInterval show progress time interval
+    --app.saveResult                is save conclusions
+    --app.result.folder             folder for storing conclusions
+    
+    --reasoner.version              reasoner version to be used
+    --reasoner.logInference         log rule status while reasoning
+    --reasoner.ambiguityPropagation ambiguity propagation support
+    --reasoner.wellFoundedSemantics well-founded semantics support
+                                    
+
+	
+====================
+Building from source
+--------------------
+The SPINdle build system is based on Jakarta Ant, and is rely on a build file 
+written in XML as building instructions.  For more information please refer
+to "http://ant.apache.org".
+
+If everything is right, you can type:
+        ant dist
+to compile the source code and archive it as an executable jar file.        
+      
+        
+2. Build targets
+The build system is not responsible for compiling SPINdle into a jar file,
+but also responsible for creating JavaDoc documentations and other tasks,
+such as:
+compile - compiles the source code (ONLY).
+dist    - compile the source code and archive it as an executable jar file.
+run     - run the reasoner.
+javadoc - generates the API documentation in ./docs/api.
+clean   - restore the distribution to its original and clean state.
+
+For example, to build the samples, type:
+                                ant compile
+                                
+To generate the API documentation, type:
+                                ant javadoc
+
+To learn the details of what each target does, please read the build.xml
+file.
+
+
+=======
+Contact
+-------
+Author: H.-P. Lam (oleklam@gmail.com)
+
+
+Support
+-------
+Any problem with this release can be report to the author directly.  If you
+are sending email to the author make sure to add the [SPINdle] prefix to
+the subject.
+
+Thank you for using SPINdle
+
+
+Latest Documentation
+--------------------
+The SPINdle userguide can be downloaded using the following URL:
+          http://spin.nicta.org.au/spindle/documentation.html
+
+
+Reference
+---------
+[1] Michael J. Maher, Propositional Defeasible Logic has Linear Complexity. 
+    Theory and Practice of Logic Programming, 1(6), 691-711 (2001)
+
+[2] Guido Governatori and Antonino Rotolo, BIO logical agents: Norms,  
+    beliefs, intentions in defeasible logic, Journal of Autonomous Agents and 
+    Multi-Agent Systems 17(1), pp. 36-69 (2008)
+
+[3] H.-P. Lam and Guido Governatori, What are the Necessity Rules in Defeasible 
+    Reasoning?, Proceedings of the 11th International Conference on Logic 
+    Programming and Nonmonotonic Reasoning (LPNMR-11), pp. 187-192, (2011) 
