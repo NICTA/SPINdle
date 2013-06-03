@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -26,7 +26,7 @@ import java.util.List;
 import spindle.core.dom.Rule;
 import spindle.core.dom.Superiority;
 import spindle.engine.TheoryNormalizerException;
-import spindle.sys.AppConst;
+import spindle.sys.AppFeatureConst;
 import spindle.sys.message.ErrorMessage;
 
 /**
@@ -55,7 +55,7 @@ public class SdlTheoryNormalizer2 extends SdlTheoryNormalizer {
 	 */
 	@Override
 	protected void transformTheoryToRegularFormImpl() throws TheoryNormalizerException {
-		if (AppConst.isVerifyConflictRules) {
+		if (AppFeatureConst.isVerifyConflictRules) {
 			List<Superiority> superiorities = theory.getAllSuperiority();
 			for (Superiority superiority : superiorities) {
 				String superiorRuleId = superiority.getSuperior();
