@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -106,7 +106,7 @@ public abstract class AbstractTheoryOutputter extends AppModuleBase implements T
 	@Override
 	public void save(OutputStream os, List<Conclusion> conclusionsAsList) throws OutputterException {
 		if (null == os) throw new OutputterException(ErrorMessage.IO_OUTPUT_STREAM_NULL);
-		if (null == conclusionsAsList) throw new OutputterException(ErrorMessage.CONCLUSION_NULL_CONCLUSIONS_SET);
+		if (null == conclusionsAsList) throw new OutputterException(ErrorMessage.CONCLUSION_NULL_CONCLUSION);
 
 		writer = new OutputStreamWriter(os);
 		try {

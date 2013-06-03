@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -55,13 +55,9 @@ import spindle.sys.message.ErrorMessage;
 /**
  * Defeasible theory and conclusions parser for theory represented using XML.
  * 
- * @deprecated As of version 2.2.2, the XML theory parser class {@link spindle.io.parser.XmlTheoryParser} is replaced by {@link spindle.io.parser.XmlTheoryParser2}.
  * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
  * @since version 1.0.0
- * @version Last modified 2013.05.30
- * @see spindle.io.parser.XmlTheoryParser2
  */
-@Deprecated
 public class XmlTheoryParser extends AbstractTheoryParser {
 	public static final String PARSER_TYPE = XmlTheoryOutputter.OUTPUTTER_TYPE;
 	private static XmlTheoryParser INSTANCE = null;

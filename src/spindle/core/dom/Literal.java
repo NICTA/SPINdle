@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -23,10 +23,8 @@ package spindle.core.dom;
 
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Map;
 
-import spindle.sys.AppFeatureConst;
 import spindle.sys.Messages;
 import spindle.sys.message.ErrorMessage;
 
@@ -45,7 +43,6 @@ public class Literal implements Comparable<Object>, Cloneable, Serializable {
 	private static final char PREDICATE_START = DomConst.Literal.PREDICATE_START;
 	private static final char PREDICATE_END = DomConst.Literal.PREDICATE_END;
 	private static final String DEFAULT_PREDICATE_VALUE = DomConst.Literal.DEFAULT_PREDICATE_VALUE;
-	private static final Comparator<Literal> DEFAULT_LITERAL_COMPARATOR = new LiteralComparator(true);
 
 	protected String name;
 	protected boolean isNegation;
@@ -70,8 +67,8 @@ public class Literal implements Comparable<Object>, Cloneable, Serializable {
 		this(name, isNegation, mode, null, (String[]) null, false);
 	}
 
-	public Literal(final String name, final boolean isNegation, final Mode mode, final Temporal temporal, final String[] predicates,
-			final boolean isPlaceHolder) {
+	public Literal(final String name, final boolean isNegation, final Mode mode, final Temporal temporal,
+			final String[] predicates, final boolean isPlaceHolder) {
 		setName(name);
 		setNegation(isNegation);
 		setMode(mode);
@@ -81,15 +78,12 @@ public class Literal implements Comparable<Object>, Cloneable, Serializable {
 	}
 
 	public Literal(Literal literal) {
-		this(literal, true);
-	}
-
-	protected Literal(Literal literal, boolean withTemporal) {
-		if (null == literal) throw new IllegalArgumentException(Messages.getErrorMessage(ErrorMessage.LITERAL_NULL_LITERAL));
+		if (null == literal)
+			throw new IllegalArgumentException(Messages.getErrorMessage(ErrorMessage.LITERAL_NULL_LITERAL));
 		setName(literal.name);
 		setNegation(literal.isNegation);
 		setMode(literal.mode);
-		if (withTemporal) setTemporal(literal.temporal);
+		setTemporal(literal.temporal);
 		setPredicates(literal.predicates);
 		setPlaceHolder(literal.isPlaceHolder);
 	}
@@ -207,7 +201,8 @@ public class Literal implements Comparable<Object>, Cloneable, Serializable {
 	}
 
 	public void setTemporal(Temporal temporal) {
-		if (null == temporal || !temporal.hasTemporalInfo()) this.temporal = null;
+		if (null == temporal || !temporal.containsTemporalInfo())
+			this.temporal = null;
 		else this.temporal = temporal.clone();
 	}
 
@@ -216,25 +211,9 @@ public class Literal implements Comparable<Object>, Cloneable, Serializable {
 	 * 
 	 * @return true if there is no temporal information; and false otherwise.
 	 */
-	public boolean hasTemporalInfo() {
-		return null == temporal ? false : temporal.hasTemporalInfo();
+	public boolean containsTemporalInfo() {
+		return null == temporal ? false : temporal.containsTemporalInfo();
 
-	}
-
-	public boolean contains(Literal literal) {
-		if (!equals(literal, false)) return false;
-		if (hasTemporalInfo()) {
-			if (literal.hasTemporalInfo()) return temporal.contains(literal.getTemporal());
-			else return false;
-		} else {
-			// the two literals are of the same
-			// and this literal does not contains any temporal information,
-			// if (literal.hasTemporalInfo())return true;
-			return true;
-		}
-		// if (hasTemporalInfo() && literal.hasTemporalInfo()) {
-		// return temporal.includes(literal.temporal);
-		// } else return equals(literal);// return false;
 	}
 
 	public boolean isPlaceHolder() {
@@ -257,32 +236,6 @@ public class Literal implements Comparable<Object>, Cloneable, Serializable {
 	public boolean isComplementTo(Literal literal) {
 		if (!this.name.equals(literal.name)) return false;
 		if (!this.mode.getName().equals(literal.mode.getName())) return false;
-
-
-		Temporal literalTemporal = literal.temporal;
-		if (null == temporal) {
-			if (null != literalTemporal) {
-				if (AppFeatureConst.checkConflictLiteralsWithTemporalStartOnly) {
-					if (Long.MIN_VALUE!=literalTemporal.getStartTime())return false;
-				}
-				//else return false;
-			}
-		} else {
-			if (null == literalTemporal) {
-				if (AppFeatureConst.checkConflictLiteralsWithTemporalStartOnly){
-					if (Long.MIN_VALUE!=temporal.getStartTime())return false;
-				}
-				//else return false;
-			} else{
-			if (AppFeatureConst.checkConflictLiteralsWithTemporalStartOnly) {
-				if (!temporal.sameStart(literalTemporal)) return false;
-			} else {
-				if (!temporal.overlap(literalTemporal)) return false;
-			}
-			}
-		}
-		
-		
 		if (predicates.length != literal.predicates.length) return false;
 		for (int i = 0; i < predicates.length; i++) {
 			if (!isPredicatesGrounded[i] && !literal.isPredicatesGrounded[i]) {
@@ -292,20 +245,15 @@ public class Literal implements Comparable<Object>, Cloneable, Serializable {
 				return false;
 			}
 		}
-		
-		// if (null == temporal && null != literalTemporal) return false;
-		// if (null != temporal) {
-		// if (null == literalTemporal) return false;
-		// // if (!temporal.sameStartTime(literal.temporal)) return false;
-		//
-		// if (AppFeatureConst.checkConflictLiteralsWithTemporalStartOnly) {
-		// if (!temporal.sameStartTime(literalTemporal)) return false;
-		// } else {
-		// if (!temporal.overlap(literalTemporal)) return false;
-		// }
-		// // if (!temporal.equals(literal.temporal)) return false;
-		// }
-		if (!"".equals(mode.getName()) && this.isNegation == literal.isNegation) { return mode.isComplementTo(literal.getMode()); }
+		if (null == temporal && null != literal.temporal) return false;
+		if (null != temporal) {
+			if (null == literal.temporal) return false;
+			if (!temporal.equalsStartTime(temporal)) return false;
+			// if (!temporal.equals(literal.temporal)) return false;
+		}
+		if (!"".equals(mode.getName()) && this.isNegation == literal.isNegation) {
+			return mode.isComplementTo(literal.getMode());
+		}
 		return this.isNegation != literal.isNegation;
 	}
 
@@ -320,19 +268,46 @@ public class Literal implements Comparable<Object>, Cloneable, Serializable {
 		return l;
 	}
 
-	public Literal getComplementCloneWithNoTemporal() {
-		Literal l = new Literal(this, false);
-		l.setNegation(!isNegation);
-		return l;
-	}
+	@Override
+	public int compareTo(Object o) {
+		if (this == o) return 0;
+		if (!(o instanceof Literal)) return getClass().getName().compareTo(o.getClass().getName());
 
-	/**
-	 * Return a copy of literal without temporal information.
-	 * 
-	 * @return A copy of the literal without temporal information.
-	 */
-	public Literal cloneWithNoTemporal() {
-		return new Literal(this, false);
+		Literal literal = (Literal) o;
+		int c = name.compareTo(literal.name);
+		if (c != 0) return c;
+		if (isNegation != literal.isNegation) return (this.isNegation) ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+
+		// same name, negation sign
+		// check mode and temporal
+		c = mode.compareTo(literal.mode);
+		if (c != 0) return c;
+
+		if (null == temporal) {
+			if (null != literal.temporal) return Integer.MIN_VALUE;
+		} else {
+			if (null == literal.temporal)
+				return Integer.MAX_VALUE;
+			else {
+				c = temporal.compareTo(literal.temporal);
+				if (c != 0) return c;
+			}
+		}
+
+		// check predicates
+		if (predicates.length != literal.predicates.length) return predicates.length - literal.predicates.length;
+		for (int i = 0; i < predicates.length; i++) {
+			if (!isPredicatesGrounded[i] && !literal.isPredicatesGrounded[i]) {
+			} else if (isPredicatesGrounded[i] && literal.isPredicatesGrounded[i]) {
+				c = predicates[i].compareTo(literal.predicates[i]);
+				if (c != 0) return c;
+				// if (!predicates[i].equals(literal.predicates[i])) return
+				// predicates[i].compareTo(literal.predicates[i]);
+			} else {
+				return (isPredicatesGrounded[i]) ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+			}
+		}
+		return 0;
 	}
 
 	public String getPredicateString() {
@@ -351,52 +326,6 @@ public class Literal implements Comparable<Object>, Cloneable, Serializable {
 	}
 
 	@Override
-	public int compareTo(Object o) {
-		if (this == o) return 0;
-		if (!(o instanceof Literal)) return getClass().getName().compareTo(o.getClass().getName());
-
-		return DEFAULT_LITERAL_COMPARATOR.compare(this, (Literal) o);
-
-		// Literal literal = (Literal) o;
-		// int c = name.compareTo(literal.name);
-		// if (c != 0) return c;
-		// if (isNegation != literal.isNegation) return (this.isNegation) ? Integer.MAX_VALUE : Integer.MIN_VALUE;
-		//
-		// // same name, negation sign
-		// // check mode and temporal
-		// c = mode.compareTo(literal.mode);
-		// if (c != 0) return c;
-		//
-		// if (null == temporal) {
-		// if (null != literal.temporal) return Integer.MIN_VALUE;
-		// } else {
-		// if (null == literal.temporal)
-		// return Integer.MAX_VALUE;
-		// else {
-		// c = temporal.compareTo(literal.temporal);
-		// if (c != 0) return c;
-		// }
-		// }
-		//
-		// // check predicates
-		// c=predicates.length-literal.predicates.length;
-		// if (c!=0)return c;
-		// // if (predicates.length != literal.predicates.length) return predicates.length - literal.predicates.length;
-		// for (int i = 0; i < predicates.length; i++) {
-		// if (!isPredicatesGrounded[i] && !literal.isPredicatesGrounded[i]) {
-		// } else if (isPredicatesGrounded[i] && literal.isPredicatesGrounded[i]) {
-		// c = predicates[i].compareTo(literal.predicates[i]);
-		// if (c != 0) return c;
-		// // if (!predicates[i].equals(literal.predicates[i])) return
-		// // predicates[i].compareTo(literal.predicates[i]);
-		// } else {
-		// return (isPredicatesGrounded[i]) ? Integer.MAX_VALUE : Integer.MIN_VALUE;
-		// }
-		// }
-		// return 0;
-	}
-
-	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
@@ -408,15 +337,16 @@ public class Literal implements Comparable<Object>, Cloneable, Serializable {
 		return result;
 	}
 
-	private boolean equals(Literal literal, boolean checkTemporal) {
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null) return false;
+		if (!(o instanceof Literal)) return false;
+
+		Literal literal = (Literal) o;
 		if (!name.equals(literal.name)) return false;
 		if (isNegation != literal.isNegation) return false;
 		if (!mode.equals(literal.mode)) return false;
-		if (checkTemporal) {
-			if (null == temporal) {
-				if (null != literal.temporal) return false;
-			} else if (!temporal.equals(literal.temporal)) return false;
-		}
 		if (predicates.length != literal.predicates.length) return false;
 		for (int i = 0; i < predicates.length; i++) {
 			if (!isPredicatesGrounded[i] && !literal.isPredicatesGrounded[i]) {
@@ -426,37 +356,10 @@ public class Literal implements Comparable<Object>, Cloneable, Serializable {
 				return false;
 			}
 		}
+		if (null == temporal) {
+			if (null != literal.temporal) return false;
+		} else if (!temporal.equals(literal.temporal)) return false;
 		return true;
-	}
-
-	public boolean equalsWithNoTemporal(Literal literal) {
-		return equals(literal, false);
-	}
-
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null) return false;
-		if (!(o instanceof Literal)) return false;
-		return equals((Literal) o, true);
-
-		// Literal literal = (Literal) o;
-		// if (!name.equals(literal.name)) return false;
-		// if (isNegation != literal.isNegation) return false;
-		// if (!mode.equals(literal.mode)) return false;
-		// if (predicates.length != literal.predicates.length) return false;
-		// for (int i = 0; i < predicates.length; i++) {
-		// if (!isPredicatesGrounded[i] && !literal.isPredicatesGrounded[i]) {
-		// } else if (isPredicatesGrounded[i] && literal.isPredicatesGrounded[i]) {
-		// if (!predicates[i].equals(literal.predicates[i])) return false;
-		// } else {
-		// return false;
-		// }
-		// }
-		// if (null == temporal) {
-		// if (null != literal.temporal) return false;
-		// } else if (!temporal.equals(literal.temporal)) return false;
-		// return true;
 	}
 
 	@Override

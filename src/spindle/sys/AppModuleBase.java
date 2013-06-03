@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -47,12 +47,12 @@ public abstract class AppModuleBase implements AppModule {
 	public void setAppLogger(final AppLogger logger) {
 		this.logger = logger;
 	}
-
+	
 	@Override
-	public String getLoggerName() {
+	public String getLoggerName(){
 		return logger.getLoggerName();
 	}
-
+	
 	@Override
 	public void resetAppLogger() {
 		logger = null;
@@ -62,6 +62,10 @@ public abstract class AppModuleBase implements AppModule {
 	public void setLogLevel(Level logLevel) {
 		if (null == logger) return;
 		logger.setLogLevel(logLevel);
+	}
+
+	protected void logMessage(Level logLevel, final int indentLevel, final String message) {
+		logMessage(logLevel, indentLevel, message, (Object[]) null);
 	}
 
 	protected void logMessage(Level logLevel, final int indentLevel, final String message, final Object... objects) {
@@ -87,11 +91,6 @@ public abstract class AppModuleBase implements AppModule {
 	protected List<AppModuleListener> getAppModuleListeners() {
 		return listeners;
 	}
-
-	protected boolean hasAppModuleListeners() {
-		return listeners.size() > 0;
-	}
-
 	// =================================
 	// Application module listener - end
 	// =================================
