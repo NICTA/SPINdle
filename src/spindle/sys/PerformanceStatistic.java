@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -156,8 +156,8 @@ public class PerformanceStatistic implements Comparable<Object> {
 	}
 
 	public long getTotalTimeUsed() {
-		return getLoadTheoryTimeUsed() + getNormalFormTransformationTimeUsed() + getDefeaterRemovalTimeUsed()
-				+ getSuperiorityRemovalTimeUsed() + getReasoningTimeUsed();
+		return getLoadTheoryTimeUsed() + getNormalFormTransformationTimeUsed() + getDefeaterRemovalTimeUsed() + getSuperiorityRemovalTimeUsed()
+				+ getReasoningTimeUsed();
 	}
 
 	public long getNoOfRules() {
@@ -223,15 +223,9 @@ public class PerformanceStatistic implements Comparable<Object> {
 				.append("\nno. of literals: ").append(noOfLiterals) //
 				.append("\nTheory loading time                  : ").append(loadTheoryElapseTimeStr) //
 				.append("\nRegular form transformation time used: ").append(transformationTimeUsed) //
-				.append("\nDefeaters removal time used          : ").append(defeaterRemovalTimeUsed);
-		switch (Conf.getReasonerVersion()) {
-		case 1:
-			sb.append("\nSuperiorities removal time used      : ").append(superiorityRemovalTimeUsed);
-			break;
-		default:
-
-		}
-		sb.append("\nReasoning start at: ").append((new Date(reasoningStartTime))) //
+				.append("\nDefeaters removal time used          : ").append(defeaterRemovalTimeUsed) //
+				.append("\nSuperiorities removal time used      : ").append(superiorityRemovalTimeUsed) //
+				.append("\nReasoning start at: ").append((new Date(reasoningStartTime))) //
 				.append("\nReasoning end at  : ").append((new Date(reasoningEndTime))) //
 				.append("\n").append(AppConst.IDENTATOR).append("Time used for reasoning: ") //
 				.append(reasoningElapseTimeStr).append(" (").append(reasoningElapseTime).append("ms)") //
@@ -240,5 +234,6 @@ public class PerformanceStatistic implements Comparable<Object> {
 		sb.append(headString);
 		return sb.toString();
 	}
+
 
 }

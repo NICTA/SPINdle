@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -72,8 +72,7 @@ public class MdlReasoningEngineAP2 extends MdlReasoningEngine2 {
 
 		Set<String> rulesToDelete = new TreeSet<String>();
 
-		Map<Conclusion, Set<String>> tempPosDefiniteConclusionSet = new TreeMap<Conclusion, Set<String>>();
-		Map<Conclusion, Set<String>> tempPosDefeasibleConclusionSet = new TreeMap<Conclusion, Set<String>>();
+		Map<Conclusion, Set<String>> tempPosConclusionSet = new TreeMap<Conclusion, Set<String>>();
 		Set<String> ruleSet = null;
 
 		for (Rule r : theory.getFactsAndAllRules().values()) {
@@ -86,10 +85,10 @@ public class MdlReasoningEngineAP2 extends MdlReasoningEngine2 {
 						Conclusion conclusion = new Conclusion(ConclusionType.DEFINITE_PROVABLE, literal);
 						addRecord(conclusion);
 
-						ruleSet = tempPosDefiniteConclusionSet.get(conclusion);
+						ruleSet = tempPosConclusionSet.get(conclusion);
 						if (null == ruleSet) {
 							ruleSet = new TreeSet<String>();
-							tempPosDefiniteConclusionSet.put(conclusion, ruleSet);
+							tempPosConclusionSet.put(conclusion, ruleSet);
 						}
 						ruleSet.add(rule.getOriginalLabel());
 
@@ -103,10 +102,10 @@ public class MdlReasoningEngineAP2 extends MdlReasoningEngine2 {
 					Conclusion conclusion = new Conclusion(ConclusionType.DEFEASIBLY_PROVABLE, literal);
 					addRecord(conclusion);
 
-					ruleSet = tempPosDefeasibleConclusionSet.get(conclusion);
+					ruleSet = tempPosConclusionSet.get(conclusion);
 					if (null == ruleSet) {
 						ruleSet = new TreeSet<String>();
-						tempPosDefeasibleConclusionSet.put(conclusion, ruleSet);
+						tempPosConclusionSet.put(conclusion, ruleSet);
 					}
 					ruleSet.add(rule.getOriginalLabel());
 
@@ -121,30 +120,27 @@ public class MdlReasoningEngineAP2 extends MdlReasoningEngine2 {
 		removeRules(rulesToDelete);
 
 		if (!AppConst.isDeploy) {
-		//	logMessage(Level.INFO, 1, "tempPosDefiniteConclusionSet=", tempPosDefiniteConclusionSet);
-			//logMessage(Level.INFO, 1, "tempPosDefeasibleConclusionSet=", tempPosDefeasibleConclusionSet);
-			//logMessage(Level.INFO, 1, "unprovedDefeasibleRuleLiterals=", unprovedDefeasibleRuleLiterals);
+			logMessage(Level.INFO, 1, "tempPosConclusionSet=", tempPosConclusionSet);
+			logMessage(Level.INFO, 1, "unprovedDefeasibleRuleLiterals=", unprovedDefeasibleRuleLiterals);
 			printPendingConclusionSet(unprovedStrictRuleLiterals, unprovedDefeasibleRuleLiterals,
-					tempPosDefiniteConclusionSet.keySet(),tempPosDefeasibleConclusionSet.keySet());
+					tempPosConclusionSet.keySet());
 		}
 
 		// for (Conclusion conclusion : tempPosConclusionSet) {
-		TreeSet<Literal> tempPosDefiniteConclusions = extractLiteralsFromConclusions(tempPosDefiniteConclusionSet.keySet());
-		TreeSet<Literal> tempPosDefeasibleConclusions = extractLiteralsFromConclusions(tempPosDefeasibleConclusionSet.keySet());
-
-		if (!isDefeasibleRuleOnly) {
-		for (Entry<Conclusion, Set<String>> entry : tempPosDefiniteConclusionSet.entrySet()) {
+		Set<Conclusion> tempPosConclusions = tempPosConclusionSet.keySet();
+		for (Entry<Conclusion, Set<String>> entry : tempPosConclusionSet.entrySet()) {
 			Conclusion conclusion = entry.getKey();
 			Set<String> ruleLabels = entry.getValue();
 
 			boolean ambiguousExist = false, pos = true;
 			Literal literal = conclusion.getLiteral();
-			Set<Literal> conflictLiterals = getConflictLiterals(literal);
+			List<Literal> conflictLiterals = getConflictLiterals(literal);
 
-		//	switch (conclusion.getConclusionType()) {
-			//case DEFINITE_PROVABLE:
-		//		if (!isDefeasibleRuleOnly) {
-					ambiguousExist = isTempConclusionExist(conflictLiterals, tempPosDefiniteConclusions);//,ConclusionType.DEFINITE_PROVABLE);
+			switch (conclusion.getConclusionType()) {
+			case DEFINITE_PROVABLE:
+				if (!isDefeasibleRuleOnly) {
+					ambiguousExist = isTempConclusionExist(conflictLiterals, tempPosConclusions,
+							ConclusionType.DEFINITE_PROVABLE);
 
 					if (!ambiguousExist) ambiguousExist = containsUnprovedRuleInTheory(conflictLiterals,
 							RuleType.STRICT);
@@ -166,25 +162,16 @@ public class MdlReasoningEngineAP2 extends MdlReasoningEngine2 {
 						}
 					}
 				}
-//				break;
-			}
-				
-				for (Entry<Conclusion, Set<String>> entry : tempPosDefeasibleConclusionSet.entrySet()) {
-					Conclusion conclusion = entry.getKey();
-					Set<String> ruleLabels = entry.getValue();
-
-					boolean ambiguousExist = false, pos = true;
-					Literal literal = conclusion.getLiteral();
-					Set<Literal> conflictLiterals = getConflictLiterals(literal);
-
-//			case DEFEASIBLY_PROVABLE:
+				break;
+			case DEFEASIBLY_PROVABLE:
 				if (!pendingConclusions[1].contains(new Conclusion(ConclusionType.DEFEASIBLY_PROVABLE, literal)) //
 						|| !isRecordExist(literal, ConclusionType.DEFEASIBLY_PROVABLE)) {
 					// -- for AP - start
 					addRecord(new Conclusion(ConclusionType.POSITIVELY_SUPPORT, conclusion.getLiteral()));
 					// -- for AP - end
 
-					ambiguousExist = isTempConclusionExist(conflictLiterals, tempPosDefeasibleConclusions);//,ConclusionType.DEFEASIBLY_PROVABLE);
+					ambiguousExist = isTempConclusionExist(conflictLiterals, tempPosConclusions,
+							ConclusionType.DEFEASIBLY_PROVABLE);
 
 					if (!ambiguousExist) ambiguousExist = containsUnprovedRuleInTheory(conflictLiterals,
 							RuleType.DEFEASIBLE);
@@ -219,9 +206,9 @@ public class MdlReasoningEngineAP2 extends MdlReasoningEngine2 {
 						}
 					}
 				}
-//				break;
-//			default:
-//			}
+				break;
+			default:
+			}
 		}
 		logMessage(Level.FINER, 1, "=== +ve set - end ===");
 
@@ -277,7 +264,7 @@ public class MdlReasoningEngineAP2 extends MdlReasoningEngine2 {
 				if (!AppConst.isDeploy) logMessage(Level.FINEST, 2, null, theory);
 
 				Literal headLiteral = rule.getHeadLiterals().get(0);
-				Set<Literal> conflictLiterals = null;
+				List<Literal> conflictLiterals = null;
 				switch (rule.getRuleType()) {
 				case STRICT:
 					logMessage(Level.FINEST, 1, "==> (strict) ", literal);
@@ -413,7 +400,7 @@ public class MdlReasoningEngineAP2 extends MdlReasoningEngine2 {
 				// ambiguity propagation - end
 
 				rulesToRemove.add(rule.getLabel());
-				Set<Literal> conflictLiterals = getConflictLiterals(headLiteral);
+				List<Literal> conflictLiterals = getConflictLiterals(headLiteral);
 				boolean containsUnprovedRuleInTheory = containsUnprovedRuleInTheory(conflictLiterals,
 						RuleType.DEFEASIBLE);
 				logMessage(Level.FINEST, 2, "==>2.0 conflictLiterals: ", conflictLiterals, ",unproved rule in theory=",
@@ -512,7 +499,7 @@ public class MdlReasoningEngineAP2 extends MdlReasoningEngine2 {
 				// literal still provable by other strict rules, so do nothing
 				logMessage(Level.FINEST, 2, "literal is provable by other defeasible rules", inapplicableLiteral);
 			} else {
-				Set<Literal> conflictLiterals = getConflictLiterals(inapplicableLiteral);
+				List<Literal> conflictLiterals = getConflictLiterals(inapplicableLiteral);
 				boolean acChk1 = isAmbiguousConclusionExist(conflictLiterals, ConclusionType.DEFEASIBLY_PROVABLE);
 				boolean acChk2 = isAmbiguousConclusionExist(inapplicableLiteral, ConclusionType.DEFEASIBLY_NOT_PROVABLE);
 				boolean recChk1 = isRecordExist(conflictLiterals, ConclusionType.DEFEASIBLY_PROVABLE);
@@ -529,7 +516,7 @@ public class MdlReasoningEngineAP2 extends MdlReasoningEngine2 {
 
 	// remove ambiguity caused by complementary literal
 	@Override
-	protected void removeComplementaryLiteralAmbiguity(int i) {
+	protected void removeComplementLiteralAmbiguity(int i) {
 		logMessage(Level.FINE, 1, "=== removeComplementLiteralAmbiguity - start ===");
 		List<Conclusion> ambiguousConclusionToRemove = new ArrayList<Conclusion>();
 		List<Conclusion> recordsToRemove = new ArrayList<Conclusion>();
@@ -539,7 +526,7 @@ public class MdlReasoningEngineAP2 extends MdlReasoningEngine2 {
 			Set<String> ruleLabels = entry.getValue();
 
 			Literal literal = conclusion.getLiteral();
-			Set<Literal> conflictLiterals = getConflictLiteralListWithoutOperatorChange(literal);
+			List<Literal> conflictLiterals = getConflictLiteralListWithoutOperatorChange(literal);
 			switch (conclusion.getConclusionType()) {
 			case DEFINITE_PROVABLE: // same as ambiguity blocking
 				logMessage(Level.FINER, 2, "removeComplementLiteralAmbiguity, check literal (definite): ", literal);

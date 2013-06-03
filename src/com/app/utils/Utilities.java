@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -84,16 +84,17 @@ public class Utilities {
 		}
 	}
 
-	public static <T> T getInstance(String classname, Class<T> clazz) throws ClassNotFoundException, ClassCastException,
+	public static <T> T getClassObject(Class<T> clazz, String classname) throws ClassNotFoundException,
 			InstantiationException, IllegalAccessException {
 		if (null == classname || "".equals(classname.trim())) throw new IllegalArgumentException("classname is null");
+
 		Class<?> cl = Class.forName(classname.trim());
 		Class<? extends T> c = cl.asSubclass(clazz);
 		return c.newInstance();
 	}
 
-	public static void extractArguments(String[] args, String argumentPrefix, Map<String, String> _arguments, List<String> _nonArguments)
-			throws InvalidArgumentException {
+	public static void extractArguments(String[] args, String argumentPrefix, Map<String, String> _arguments,
+			List<String> _nonArguments) throws InvalidArgumentException {
 		if (null == args || args.length == 0) return;
 
 		Map<String, String> arguments = new TreeMap<String, String>();
@@ -111,7 +112,8 @@ public class Utilities {
 						name = s.substring(0, l);
 						value = s.substring(l + 1);
 					} else if (l == 0) {
-						throw new InvalidArgumentException("invalid argument [" + arg.trim() + "] - argument name not found!");
+						throw new InvalidArgumentException("invalid argument [" + arg.trim()
+								+ "] - argument name not found!");
 					} else {
 						name = s;
 					}

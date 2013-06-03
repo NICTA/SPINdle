@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -24,27 +24,16 @@ package spindle.io.outputter;
 /**
  * Tags used in XML theory parser and outputter.
  * 
- * @deprecated As of version 2.2.2, the XmlTag interface is depreacted as the associated XML theory parser ({@link spindle.io.parser.XmlTheoryParser}) 
- * and outputter ({@link spindle.io.outputter.XmlTheoryOutputter})  classes are deprecated.
  * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
  * @since version 1.0.0
- * @version Last modified 2013.05.30
- * @see spindle.io.parser.XmlTheoryParser
- * @see spindle.io.parser.XmlTheoryParser2
- * @see spindle.io.outputter.XmlTheoryOutputter
- * @see spindle.io.outputter.XmlTheoryOutputter2
  */
-@Deprecated
 public interface XmlTag {
 	/**
 	 * XML tags used in XML theory parser.
 	 * 
 	 * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
 	 * @since version 1.0.0
-	 * @deprecated As of version 2.2.2, the XmlTag.Tag enumeration is depreacted as the associated XML theory parser ({@link spindle.io.parser.XmlTheoryParser}) 
-	 * and outputter ({@link spindle.io.outputter.XmlTheoryOutputter})  classes are deprecated.
 	 */
-	@Deprecated 
 	enum Tag {
 		DOC_ROOT("theory"), //
 		LITERAL_VARIABLE("literalVariable"), LITERAL_VARIABLE_NAME("name"), LITERAL_VARIABLE_VALUE("value"), //
@@ -81,10 +70,7 @@ public interface XmlTag {
 	 * 
 	 * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
 	 * @since version 1.0.0
-	 * @deprecated As of version 2.2.2, the XmlTag.Attribute enumeration is depreacted as the associated XML theory parser ({@link spindle.io.parser.XmlTheoryParser}) 
-	 * and outputter ({@link spindle.io.outputter.XmlTheoryOutputter})  classes are deprecated.
 	 */
-	@Deprecated
 	enum Attribute {
 		RULE_TYPE_STRICT_RULE("strength", "STRICT"), //
 		RULE_TYPE_DEFEASIBLE_RULE("strength", "DEFEASIBLE"), //

@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -33,25 +33,22 @@ import spindle.sys.message.ErrorMessage;
  * @since version 1.0.0
  */
 public enum RuleType {
-	LITERAL_VARIABLE_SET("Literal variable/boolean function", "set", ProvabilityLevel.NONE), //
-	FACT("Fact", ">>", ProvabilityLevel.NONE), //
-	STRICT("Strict rule", "->", ProvabilityLevel.DEFINITE), //
-	DEFEASIBLE("Defeasible rule", "=>", ProvabilityLevel.DEFEASIBLE), //
-	DEFEATER("Defeater", "~>", ProvabilityLevel.NONE), //
-	SUPERIORITY("Superiority relation", ">", ProvabilityLevel.NONE), //
-	INFERIORITY("Inferiority relation", "<", ProvabilityLevel.NONE), //
-	MODE_CONVERSION("Mode conversion", "==", ProvabilityLevel.NONE), //
-	MODE_CONFLICT("Mode conflict", "!=", ProvabilityLevel.NONE), //
-	MODE_EXCLUSION("Mode exclusion", "<>", ProvabilityLevel.NONE);
+	LITERAL_VARIABLE_SET("Literal variable/boolean function", "set"), //
+	FACT("Fact", ">>"), //
+	STRICT("Strict rule", "->"), //
+	DEFEASIBLE("Defeasible rule", "=>"), //
+	DEFEATER("Defeater", "~>"), //
+	SUPERIORITY("Superiority relation", ">"), //
+	INFERIORITY("Inferiority relation", "<"), //
+	MODE_CONVERSION("Mode conversion", "=="), //
+	MODE_CONFLICT("Mode conflict", "!=");
 
 	private final String label;
 	private final String symbol;
-	private final ProvabilityLevel provabilityLevel;
 
-	RuleType(String _label, String _symbol, ProvabilityLevel _provabilityLevel) {
+	RuleType(String _label, String _symbol) {
 		label = _label.trim();
 		symbol = _symbol.trim();
-		provabilityLevel = _provabilityLevel;
 	}
 
 	public String getLabel() {
@@ -60,10 +57,6 @@ public enum RuleType {
 
 	public String getSymbol() {
 		return symbol;
-	}
-
-	public ProvabilityLevel getProvabilityLevel() {
-		return provabilityLevel;
 	}
 
 	/**
@@ -85,6 +78,6 @@ public enum RuleType {
 				if (str.indexOf(ruleType.symbol, loc) >= 0) return ruleType;
 			}
 		}
-		throw new ParserException(ErrorMessage.RULE_UNRECOGNIZED_RULE_TYPE, new Object[] { str });
+		throw new ParserException(ErrorMessage.RULE_UNRECOGNIZED_RULE_TYPE,new Object[]{ str});
 	}
 }
