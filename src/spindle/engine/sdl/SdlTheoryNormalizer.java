@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -124,7 +124,7 @@ newRule.setOriginalLabel(originalRuleLabel);
 	 * transform the theory to regular form and normalize the defeasible rule to single literal head
 	 */
 	@Override
-	protected void transformTheoryToRegularFormImpl() throws TheoryNormalizerException {
+	protected void transformTheoryToRegularFormImpl() throws TheoryNormalizerException {		
 		List<Rule> rulesToAdd = new ArrayList<Rule>();
 		Set<String> rulesToDelete = new TreeSet<String>();
 

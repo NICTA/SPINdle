@@ -1,11 +1,13 @@
 =============
-Release 2.2.0
+Release 2.2.2
 -------------
-- rules inference statuses logging and reasoning with negated modality are
+- Rules inference statuses logging and reasoning with negated modality are
   supported.
-- minor bugs fixed.
+- The XML schema for defeasible theories and conclusions (and the associated 
+  theory parser and outputter) is updated.  
+- Minor bugs fixed.
 
-API changes since release 2.1.1
+API changes since release 2.2.0
 -------------------------------
 Classes added
 - com.app.utils.MapEntry
@@ -19,13 +21,19 @@ Classes added
 - spindle.core.dom.RuleModeConversionException
 - spindle.core.dom.TemporalException
 - spindle.engine.ReasoningEngineException
+- spindle.io.xjc.dom2.*
+- spindle.io.parser.XmlTheoryParser2
+- spindle.io.outputter.XmlTheoryOutputter
 - spindle.sys.AppLoggerImpl
 - spindle.tools.ToolsException
 - spindle.tools.explanation.*
 
 Classes deprecated
 - spindle.io.ComponentMismatchException
+- spindle.io.outputter.XmlTag
+- spindle.io.outputter.XmlTheoryOutputter
 - spindle.io.parser.DflTheoryParser
+- spindle.io.parser.XmlTheoryParser
 - spindle.io.parser.TheroyParserUtilities
 
 Classes removed
@@ -42,7 +50,7 @@ Properties files removed
 
 
 =============
-Release 2.1.1
+Release 2.2.0
 -------------
 - minor bug fixed in theory parser.
 

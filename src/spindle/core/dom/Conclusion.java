@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -63,6 +63,18 @@ public class Conclusion implements Comparable<Object>, Cloneable, Serializable {
 		this.conclusionType = conclusionType;
 	}
 
+	public boolean hasTemporalInfo() {
+		return literal.hasTemporalInfo();
+	}
+
+	public Temporal getTemporal() {
+		return literal.getTemporal();
+	}
+
+	public ProvabilityLevel getProvabilityLevel() {
+		return conclusionType.getProvabilityLevel();
+	}
+
 	/**
 	 * two conclusions are conflict if <br/>
 	 * <ul>
@@ -72,15 +84,16 @@ public class Conclusion implements Comparable<Object>, Cloneable, Serializable {
 	 */
 	public boolean isConflictWith(Conclusion conclusion) {
 		if (this.literal.equals(conclusion.literal)) {
-			if (this.conclusionType == ConclusionType.DEFINITE_PROVABLE
-					&& conclusion.conclusionType == ConclusionType.DEFINITE_NOT_PROVABLE) return true;
-			if (this.conclusionType == ConclusionType.DEFINITE_NOT_PROVABLE
-					&& conclusion.conclusionType == ConclusionType.DEFINITE_PROVABLE) return true;
-
-			if (this.conclusionType == ConclusionType.DEFEASIBLY_PROVABLE
-					&& conclusion.conclusionType == ConclusionType.DEFEASIBLY_NOT_PROVABLE) return true;
-			if (this.conclusionType == ConclusionType.DEFEASIBLY_NOT_PROVABLE
-					&& conclusion.conclusionType == ConclusionType.DEFEASIBLY_PROVABLE) return true;
+			return (this.conclusionType.isConflictWith(conclusion.conclusionType));
+//			if (this.conclusionType == ConclusionType.DEFINITE_PROVABLE
+//					&& conclusion.conclusionType == ConclusionType.DEFINITE_NOT_PROVABLE) return true;
+//			if (this.conclusionType == ConclusionType.DEFINITE_NOT_PROVABLE
+//					&& conclusion.conclusionType == ConclusionType.DEFINITE_PROVABLE) return true;
+//
+//			if (this.conclusionType == ConclusionType.DEFEASIBLY_PROVABLE
+//					&& conclusion.conclusionType == ConclusionType.DEFEASIBLY_NOT_PROVABLE) return true;
+//			if (this.conclusionType == ConclusionType.DEFEASIBLY_NOT_PROVABLE
+//					&& conclusion.conclusionType == ConclusionType.DEFEASIBLY_PROVABLE) return true;
 		} else if (this.literal.getComplementClone().equals(conclusion.literal)) {
 			if (this.conclusionType == conclusion.conclusionType) {
 				if (this.conclusionType == ConclusionType.DEFINITE_PROVABLE) return true;
@@ -119,6 +132,11 @@ public class Conclusion implements Comparable<Object>, Cloneable, Serializable {
 		Conclusion c = (Conclusion) o;
 		if (conclusionType != c.conclusionType) return false;
 		return literal.equals(c.literal);
+	}
+
+	@Override
+	public Conclusion clone() {
+		return new Conclusion(this);
 	}
 
 	public String toString() {

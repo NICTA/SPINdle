@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -89,7 +89,7 @@ public class MdlTheoryNormalizer extends TheoryNormalizer {
 	protected List<Rule> expandDefeasibleRule(final Rule rule) throws RuleException {
 		if (rule.getRuleType() != RuleType.DEFEASIBLE) return null;
 
-		String originalRuleLabel=rule.getOriginalLabel();
+		String originalRuleLabel = rule.getOriginalLabel();
 		List<Rule> newRules = new ArrayList<Rule>();
 		List<Literal> headLiterals = rule.getHeadLiterals();
 		try {
@@ -110,7 +110,7 @@ public class MdlTheoryNormalizer extends TheoryNormalizer {
 
 					String newRuleLabel = rule.getLabel() + "_" + count;
 					Rule newRule = DomUtilities.getRule(newRuleLabel, RuleType.DEFEASIBLE);
-newRule.setOriginalLabel(originalRuleLabel);
+					newRule.setOriginalLabel(originalRuleLabel);
 					newRule.setMode(ruleMode);
 					addBodyLiterals(newRule, bodyLiterals, "");
 
@@ -149,7 +149,7 @@ newRule.setOriginalLabel(originalRuleLabel);
 				newRule3 = null;
 				headLiterals = null;
 
-				String originalRuleLabel=rule.getOriginalLabel();
+				String originalRuleLabel = rule.getOriginalLabel();
 				Mode ruleMode = rule.getMode();
 				if ("".equals(ruleMode.getName())) ruleMode = null;
 
@@ -162,13 +162,13 @@ newRule.setOriginalLabel(originalRuleLabel);
 							.getRandomString(AppConst.LOG_FILE_ID_LENGTH) + TRANSFORM_POSTFIX) : TRANSFORM_POSTFIX;
 
 					newRule1 = DomUtilities.getRule(rule.getLabel() + profixStr, RuleType.STRICT);
-newRule1.setOriginalLabel(originalRuleLabel);
+					newRule1.setOriginalLabel(originalRuleLabel);
 					if (null != ruleMode) newRule1.setMode(ruleMode);
 					addBodyLiterals(newRule1, rule.getBodyLiterals(), TRANSFORM_POSTFIX);
 					addHeadLiterals(newRule1, headLiterals, TRANSFORM_POSTFIX);
 
 					newRule2 = DomUtilities.getRule(rule.getLabel() + profixStr + TRANSFORM_POSTFIX2, RuleType.STRICT);
-newRule2.setOriginalLabel(originalRuleLabel)	;				
+					newRule2.setOriginalLabel(originalRuleLabel);
 					if (null != ruleMode) newRule2.setMode(ruleMode);
 					addBodyLiterals(newRule2, headLiterals, TRANSFORM_POSTFIX);
 					addHeadLiterals(newRule2, origHeadLiterals, "");
@@ -177,7 +177,7 @@ newRule2.setOriginalLabel(originalRuleLabel)	;
 					// change the strict rule to defeasible rule, and
 					// add the two new strict rules to the theory
 					newRule3 = rule.clone();
-newRule3.setOriginalLabel(originalRuleLabel);
+					newRule3.setOriginalLabel(originalRuleLabel);
 					newRule3.setRuleType(RuleType.DEFEASIBLE);
 
 					rulesToAdd.add(newRule1);
@@ -192,12 +192,12 @@ newRule3.setOriginalLabel(originalRuleLabel);
 					String newFactStrictRuleLabel = theory.getUniqueRuleLabel(FACT_RULE_TRANSFORM_PREFIX);
 
 					newRule1 = DomUtilities.getRule(newFactStrictRuleLabel, RuleType.STRICT);
-newRule1.setOriginalLabel(originalRuleLabel);
+					newRule1.setOriginalLabel(originalRuleLabel);
 					if (null != ruleMode) newRule1.setMode(ruleMode);
 					addHeadLiterals(newRule1, headLiterals, TRANSFORM_POSTFIX);
 
 					newRule2 = DomUtilities.getRule(newFactStrictRuleLabel + TRANSFORM_POSTFIX, RuleType.STRICT);
-newRule2.setOriginalLabel(originalRuleLabel)	;				
+					newRule2.setOriginalLabel(originalRuleLabel);
 					if (null != ruleMode) newRule2.setMode(ruleMode);
 					addBodyLiterals(newRule2, headLiterals, TRANSFORM_POSTFIX);
 					addHeadLiterals(newRule2, origHeadLiterals, "");
@@ -223,12 +223,12 @@ newRule2.setOriginalLabel(originalRuleLabel)	;
 					for (Rule expendedRule : expandedModeRules) {
 						headLiterals = expendedRule.getHeadLiterals();
 						if (headLiterals.size() > 1) {
-							logMessage(Level.FINEST, 1, "expending ", expendedRule.getRuleType().getLabel(), " [",
-									expendedRule.getLabel(), "]");
+							logMessage(Level.FINEST, 1, "expending ", expendedRule.getRuleType().getLabel(), " [", expendedRule.getLabel(),
+									"]");
 							newRules.addAll(expandDefeasibleRule(expendedRule));
 						} else {
-							logMessage(Level.FINEST, 1, "no transform performed to ", rule.getRuleType().getLabel(),
-									" [", rule.getLabel(), "]");
+							logMessage(Level.FINEST, 1, "no transform performed to ", rule.getRuleType().getLabel(), " [", rule.getLabel(),
+									"]");
 							newRules.add(expendedRule);
 						}
 					}
@@ -241,19 +241,17 @@ newRule2.setOriginalLabel(originalRuleLabel)	;
 					if (newRules.size() > 1) oldNewRuleMapping.put(rule.getLabel(), newRules);
 					break;
 				default:
-					logMessage(Level.FINEST, 2, "no transform performed to ", rule.getRuleType().getLabel(), " [",
-							rule.getLabel(), "]");
+					logMessage(Level.FINEST, 2, "no transform performed to ", rule.getRuleType().getLabel(), " [", rule.getLabel(), "]");
 				}
 			}
 			theory.updateTheory(rulesToAdd, rulesToDelete, oldNewRuleMapping);
 		} catch (Exception e) {
-			throw new TheoryNormalizerException(getClass(), ErrorMessage.THEORY_UPDATE_ERROR,
-					"Theory update exception!", e);
+			throw new TheoryNormalizerException(getClass(), ErrorMessage.THEORY_UPDATE_ERROR, e);
 		} finally {
 			if (!AppConst.isDeploy) {
-				logMessage(Level.INFO, 0, "=== expandRuleWithModeConversion - start ===");
+				logMessage(Level.INFO, 0, "=== transformTheoryToRegularFormImpl - start ===");
 				logMessage(Level.INFO, 0, theory.toString());
-				logMessage(Level.INFO, 0, "=== expandRuleWithModeConversion -  end  ===");
+				logMessage(Level.INFO, 0, "=== transformTheoryToRegularFormImpl -  end  ===");
 			}
 		}
 	}
@@ -287,20 +285,19 @@ newRule2.setOriginalLabel(originalRuleLabel)	;
 
 		if (!AppConst.isDeploy) {
 			logMessage(Level.INFO, 0, "convertRuleMode.rule=", modifiedRule);
-			logMessage(Level.INFO, 1, "convertRuleMode.rule.getBodyLiterals().size()="
-					+ modifiedRule.getBodyLiterals().size());
+			logMessage(Level.INFO, 1, "convertRuleMode.rule.getBodyLiterals().size()=" + modifiedRule.getBodyLiterals().size());
 			logMessage(Level.INFO, 1, "convertRuleMode.modeUsedInBody.size()=" + modeUsedInBody.size());
 			logMessage(Level.INFO, 1, "convertRuleMode.modeUsedInBody=", modeUsedInBody);
 		}
-		
+
 		if (modifiedRule.getBodyLiterals().size() == 0 || modeUsedInBody.size() == 0) {
-			//ruleModeName= modifiedRule.getHeadLiterals().get(0).getMode().getName();
-//			ruleModeName =headLiteralMode.getName();
-//			Set<String> conversionRule = theory.getModeConversionRules(ruleModeName);
-			Mode headLiteralMode=modifiedRule.getHeadLiterals().get(0).getMode();
+			// ruleModeName= modifiedRule.getHeadLiterals().get(0).getMode().getName();
+			// ruleModeName =headLiteralMode.getName();
+			// Set<String> conversionRule = theory.getModeConversionRules(ruleModeName);
+			Mode headLiteralMode = modifiedRule.getHeadLiterals().get(0).getMode();
 			Set<String> conversionRule = theory.getModeConversionRules(headLiteralMode.getName());
-			if (!AppConst.isDeploy) logMessage(Level.INFO, 1, "convertRuleMode.1, ruleModeName=", ruleModeName,
-					",conversionRule =", conversionRule);
+			if (!AppConst.isDeploy)
+				logMessage(Level.INFO, 1, "convertRuleMode.1, ruleModeName=", ruleModeName, ",conversionRule =", conversionRule);
 			if (null != conversionRule) {
 				for (String cm : conversionRule) {
 					try {
@@ -316,12 +313,12 @@ newRule2.setOriginalLabel(originalRuleLabel)	;
 			}
 		} else if (modeUsedInBody.size() == 1) {
 			String bodyMode = (modeUsedInBody.size() == 0) ? "" : modeUsedInBody.get(0).getName();
-		//	ruleModeName = modifiedRule.getHeadLiterals().get(0).getMode().getName();
-			//Set<String> conversionRule = theory.getModeConversionRules(ruleModeName);
-			Mode headLiteralMode=modifiedRule.getHeadLiterals().get(0).getMode();
-			Set<String> conversionRule=theory.getModeConflictRules(headLiteralMode.getName());
-			if (!AppConst.isDeploy) logMessage(Level.INFO, 1, "convertRuleMode.2, ruleModeName=", ruleModeName,
-					",conversionRule =", conversionRule);
+			// ruleModeName = modifiedRule.getHeadLiterals().get(0).getMode().getName();
+			// Set<String> conversionRule = theory.getModeConversionRules(ruleModeName);
+			Mode headLiteralMode = modifiedRule.getHeadLiterals().get(0).getMode();
+			Set<String> conversionRule = theory.getModeConflictRules(headLiteralMode.getName());
+			if (!AppConst.isDeploy)
+				logMessage(Level.INFO, 1, "convertRuleMode.2, ruleModeName=", ruleModeName, ",conversionRule =", conversionRule);
 			if (null != conversionRule && conversionRule.contains(bodyMode)) {
 				try {
 					Rule newRule = modifiedRule.cloneWithModeChange(new Mode(bodyMode, headLiteralMode.isNegation()));

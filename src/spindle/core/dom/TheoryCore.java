@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -35,6 +35,7 @@ import java.util.Map.Entry;
 import com.app.utils.FileManager;
 import com.app.utils.Utilities;
 
+import spindle.sys.AppConst;
 import spindle.sys.Messages;
 import spindle.sys.message.ErrorMessage;
 import spindle.sys.message.SystemMessage;
@@ -52,6 +53,8 @@ public abstract class TheoryCore implements Serializable {
 
 	// =====
 	// basic theory data
+	protected String description = "";
+
 	// - literal variables
 	protected Map<LiteralVariable, LiteralVariable> literalVariables = null;
 	protected Map<LiteralVariable, LiteralVariable> literalBooleanFunctions = null;
@@ -68,14 +71,20 @@ public abstract class TheoryCore implements Serializable {
 	protected TheoryType theoryType = TheoryType.SDL;
 	protected Map<Literal, Map<String, Rule>> literalRuleAssoList = null;
 	protected Map<RuleType, Map<String, Rule>> ruleTypeAssoList = null;
+	protected Map<Literal, TreeSet<Literal>> mixedLiteralsSets[] = null;
 
 	// - mode conversation and mode conflict rules
 	protected Map<String, Set<String>> modeConversionRules = null;
 	protected Map<String, Set<String>> modeConflictRules = null;
+	protected Map<String, Set<String>> modeExclusionRules = null;
 	private boolean conversionRulesModified = false;
 	private boolean conflictRulesModified = false;
+	private boolean exclusionRulesModified = false;
 
+	@SuppressWarnings("unchecked")
 	public TheoryCore() {
+		description = "";
+
 		literalVariables = new TreeMap<LiteralVariable, LiteralVariable>();
 		literalBooleanFunctions = new TreeMap<LiteralVariable, LiteralVariable>();
 		literalVariablesInRules = new TreeSet<LiteralVariable>();
@@ -90,17 +99,26 @@ public abstract class TheoryCore implements Serializable {
 
 		literalRuleAssoList = new TreeMap<Literal, Map<String, Rule>>();
 		ruleTypeAssoList = new TreeMap<RuleType, Map<String, Rule>>();
+		mixedLiteralsSets = new TreeMap[2];
+		for (int i = 0; i < 2; i++) {
+			mixedLiteralsSets[i] = new TreeMap<Literal, TreeSet<Literal>>(new LiteralComparator(false));
+		}
+		// mixedLiteralsSets = new TreeMap<Literal, TreeSet<Literal>>(new LiteralComparator(false));
 
 		modeConversionRules = new TreeMap<String, Set<String>>();
 		modeConflictRules = new TreeMap<String, Set<String>>();
+		modeExclusionRules = new TreeMap<String, Set<String>>();
 
 		resetConversionRulesModified();
 		resetConflictRulesModified();
+		resetExclusionRulesModified();
 	}
 
 	public TheoryCore(TheoryCore theory) {
 		this();
 		if (null == theory) return;
+		setDescription(theory.getDescription());
+
 		try {
 			for (Entry<LiteralVariable, LiteralVariable> entry : theory.literalVariables.entrySet()) {
 				addLiteralVariable(entry.getKey(), entry.getValue());
@@ -124,19 +142,32 @@ public abstract class TheoryCore implements Serializable {
 				String[] conflictModes = conflictModesSet.toArray(new String[conflictModesSet.size()]);
 				addModeConflictRules(entry.getKey(), conflictModes);
 			}
+			for (Entry<String, Set<String>> entry : theory.modeExclusionRules.entrySet()) {
+				Set<String> excludedModesSet = entry.getValue();
+				String[] excludedModes = excludedModesSet.toArray(new String[excludedModesSet.size()]);
+				addModeExclusionRules(entry.getKey(), excludedModes);
+			}
 		} catch (TheoryException e) {
 			e.printStackTrace();
 		}
 	}
 
+	public void setDescription(String description) {
+		this.description = null == description ? "" : description.trim();
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
 	public void addLiteralVariable(final LiteralVariable varName, final LiteralVariable value) throws TheoryException {
-		if (varName.getName().charAt(0) != DomConst.Literal.LITERAL_VARIABLE_PREFIX) throw new TheoryException(
-				ErrorMessage.LITERAL_VARIABLE_PREFIX_ERROR, new String[] { varName.toString() });
+		if (varName.getName().charAt(0) != DomConst.Literal.LITERAL_VARIABLE_PREFIX)
+			throw new TheoryException(ErrorMessage.LITERAL_VARIABLE_PREFIX_ERROR, new String[] { varName.toString() });
 
 		if (literalVariables.containsKey(varName)) {
 			throw new TheoryException(ErrorMessage.LITERAL_VARIABLE_EXISTS, new Object[] { varName.getName() });
-		} else if (literalBooleanFunctions.containsKey(varName)) { throw new TheoryException(
-				ErrorMessage.LITERAL_BOOLEAN_FUNCTION_EXISTS, new Object[] { varName.getName() }); }
+		} else if (literalBooleanFunctions.containsKey(varName)) { throw new TheoryException(ErrorMessage.LITERAL_BOOLEAN_FUNCTION_EXISTS,
+				new Object[] { varName.getName() }); }
 
 		if (value.getName().charAt(0) == DomConst.Literal.LITERAL_VARIABLE_PREFIX) {
 			literalVariables.put(varName.clone(), value.clone());
@@ -166,6 +197,12 @@ public abstract class TheoryCore implements Serializable {
 	}
 
 	public void clearLiteralVariables() {
+		// for (LiteralVariable lv:literalVariables.keySet()){
+		// literalRuleAssoList.remove(lv);
+		// for (int i=0;i<mixedLiteralsSets.length;i++){
+		// mixedLiteralsSets[i].remove(lv);
+		// }
+		// }
 		literalVariables.clear();
 	}
 
@@ -185,7 +222,43 @@ public abstract class TheoryCore implements Serializable {
 		return literalVariablesInRules;
 	}
 
+	/**
+	 * Update the literal variable with a literal.
+	 * This can be used to replace a literal variable with a regular literal after the literal variable evaluation
+	 * process.
+	 * See {@link spindle.tools.evaluator.LiteralVariablesEvaluator#addBooleanConclusionGenerated} for details.
+	 * 
+	 * @param literalVariable Literal variable to be replaced.
+	 * @param literal Literal used to substitute the literal variable.
+	 * @throws TheoryException
+	 */
+	public void updateLiteralVariableInRule(LiteralVariable literalVariable, Literal literal) throws TheoryException {
+		Map<String, Rule> lvRules = getRules(literalVariable);
+		if (null == literal) {
+			for (Entry<String, Rule> entry : lvRules.entrySet()) {
+				String ruleLabel = entry.getKey();
+				Rule r = entry.getValue();
+				removeRule(ruleLabel);
+				r.removeBodyLiteral(literalVariable);
+				addRule(r);
+			}
+		} else {
+			for (Entry<String, Rule> entry : lvRules.entrySet()) {
+				String ruleLabel = entry.getKey();
+				Rule r = entry.getValue();
+				removeRule(ruleLabel);
+				r.removeBodyLiteral(literalVariable);
+				r.addBodyLiteral(literal);
+				addRule(r);
+			}
+		}
+		literalVariablesInRules.remove(literalVariable);
+	}
+
 	public int getLiteralVariablesInRulesCount() {
+		for (LiteralVariable lv : literalVariablesInRules) {
+			System.out.println("literalVariablesInRules=" + lv);
+		}
 		return literalVariablesInRules.size();
 	}
 
@@ -197,6 +270,77 @@ public abstract class TheoryCore implements Serializable {
 		return literalBooleanFunctionsInRules.size();
 	}
 
+	public void addModeExclusionRules(final String modeName, final String[] excludedModes) {
+		if (null == excludedModes || excludedModes.length == 0) return;
+		if (addModeToSet(modeName, modeExclusionRules, excludedModes)) exclusionRulesModified = true;
+		// String o = modeName.trim().toUpperCase();
+		// Set<String> modeList = modeExclusionRules.get(o);
+		// if (null == modeList) {
+		// modeList = new TreeSet<String>();
+		// modeExclusionRules.put(o, modeList);
+		// }
+		// for (String excludedMode : excludedModes) {
+		// String mode = excludedMode.trim().toUpperCase();
+		// if (!"".equals(mode)) {
+		// if (modeList.add(mode)) exclusionRulesModified = true;
+		// }
+		// }
+		// if (modeList.size() == 0) modeExclusionRules.remove(o);
+	}
+
+	public void removeModeExclusionRule(final String modeName, String excludedMode) {
+		if (removeModeFromSet(modeName, modeExclusionRules, excludedMode)) exclusionRulesModified = true;
+		// String modeNameUpper = modeName.trim().toUpperCase();
+		// String excludedModeUpper = excludedMode.trim().toUpperCase();
+		// Set<String> modeList = modeExclusionRules.get(modeNameUpper);
+		// if (null == modeList) return;
+		// if (modeList.remove(excludedModeUpper)) {
+		// if (modeList.size() == 0) modeExclusionRules.remove(modeNameUpper);
+		// exclusionRulesModified = true;
+		// }
+	}
+
+	private boolean removeModeFromSet(final String modeName, Map<String, Set<String>> modeSets, String modeToRemove) {
+		if (null == modeName || "".equals(modeName.trim())) return false;
+		boolean isModified = false;
+		String o = modeName.trim().toUpperCase();
+		Set<String> modeSet = modeSets.get(o);
+		if (null == modeSet) return isModified;
+		String n = modeToRemove.trim().toUpperCase();
+		if (!"".equals(n) && modeSet.remove(n)) {
+			isModified = true;
+			if (modeSet.size() == 0) modeSets.remove(o);
+		}
+		return isModified;
+	}
+
+	private boolean addModeToSet(final String modeName, Map<String, Set<String>> modeSets, String[] modeToAdd) {
+		if (null == modeName || "".equals(modeName.trim())) return false;
+		boolean isModified = false;
+		String o = modeName.trim().toUpperCase();
+		Set<String> modeSet = modeSets.get(o);
+		if (null == modeSet) {
+			modeSet = new TreeSet<String>();
+			modeSets.put(o, modeSet);
+		}
+		for (String newMode : modeToAdd) {
+			String n = newMode.trim().toUpperCase();
+			if ("".equals(n)) continue;
+			if (modeSet.add(n)) isModified = true;
+		}
+		if (modeSet.size() == 0) modeSets.remove(o);
+		return isModified;
+	}
+
+	/**
+	 * check if there exist any mode conversion rules
+	 * 
+	 * @return true if there exist any mode conversion rules in theory
+	 */
+	public boolean isExclusionRulesModified() {
+		return exclusionRulesModified;
+	}
+
 	/**
 	 * add mode conversions rule to theory
 	 * 
@@ -205,19 +349,20 @@ public abstract class TheoryCore implements Serializable {
 	 */
 	public void addModeConversionRules(final String modeName, final String[] convertModes) {
 		if (null == convertModes || convertModes.length == 0) return;
-		String o = modeName.trim().toUpperCase();
-		Set<String> modeList = modeConversionRules.get(o);
-		if (null == modeList) {
-			modeList = new TreeSet<String>();
-			modeConversionRules.put(o, modeList);
-		}
-		for (String convertMode : convertModes) {
-			String mode = convertMode.trim().toUpperCase();
-			if (!"".equals(mode)) {
-				if (modeList.add(mode)) conversionRulesModified = true;
-			}
-		}
-		if (modeList.size() == 0) modeConversionRules.remove(o);
+		if (addModeToSet(modeName, modeConversionRules, convertModes)) conversionRulesModified = true;
+		// String o = modeName.trim().toUpperCase();
+		// Set<String> modeList = modeConversionRules.get(o);
+		// if (null == modeList) {
+		// modeList = new TreeSet<String>();
+		// modeConversionRules.put(o, modeList);
+		// }
+		// for (String convertMode : convertModes) {
+		// String mode = convertMode.trim().toUpperCase();
+		// if (!"".equals(mode)) {
+		// if (modeList.add(mode)) conversionRulesModified = true;
+		// }
+		// }
+		// if (modeList.size() == 0) modeConversionRules.remove(o);
 	}
 
 	/**
@@ -227,14 +372,15 @@ public abstract class TheoryCore implements Serializable {
 	 * @param convertMode
 	 */
 	public void removeModeConversionRule(final String modeName, final String convertMode) {
-		String modeNameUpper = modeName.trim().toUpperCase();
-		String covertModeUpper = convertMode.trim().toUpperCase();
-		Set<String> modeList = modeConversionRules.get(modeNameUpper);
-		if (null == modeList) return;
-		if (modeList.remove(covertModeUpper)) {
-			if (modeList.size() == 0) modeConversionRules.remove(modeNameUpper);
-			conversionRulesModified = true;
-		}
+		if (removeModeFromSet(modeName, modeConversionRules, convertMode)) conversionRulesModified = true;
+		// String modeNameUpper = modeName.trim().toUpperCase();
+		// String covertModeUpper = convertMode.trim().toUpperCase();
+		// Set<String> modeList = modeConversionRules.get(modeNameUpper);
+		// if (null == modeList) return;
+		// if (modeList.remove(covertModeUpper)) {
+		// if (modeList.size() == 0) modeConversionRules.remove(modeNameUpper);
+		// conversionRulesModified = true;
+		// }
 	}
 
 	public Set<String> getModeConversionRules(final String mode) {
@@ -243,6 +389,18 @@ public abstract class TheoryCore implements Serializable {
 
 	public Map<String, Set<String>> getAllModeConversionRules() {
 		return modeConversionRules;
+	}
+
+	public Set<String> getModeExclusionRules(final String mode) {
+		return modeExclusionRules.get(mode.trim().toUpperCase());
+	}
+	
+	public int getModeExclusionRulesCount(){
+		return modeExclusionRules.size();
+	}
+
+	public Map<String, Set<String>> getAllModeExclusionRules() {
+		return modeExclusionRules;
 	}
 
 	/**
@@ -269,19 +427,20 @@ public abstract class TheoryCore implements Serializable {
 	 */
 	public void addModeConflictRules(final String modeName, final String[] conflictModes) {
 		if (null == conflictModes || conflictModes.length == 0) return;
-		String o = modeName.trim().toUpperCase();
-		Set<String> modeList = modeConflictRules.get(o);
-		if (null == modeList) {
-			modeList = new TreeSet<String>();
-			modeConflictRules.put(o, modeList);
-		}
-		for (String conflictMode : conflictModes) {
-			String mode = conflictMode.trim().toUpperCase();
-			if (!"".equals(mode)) {
-				if (modeList.add(mode)) conflictRulesModified = true;
-			}
-		}
-		if (modeList.size() == 0) modeConversionRules.remove(o);
+		if (addModeToSet(modeName, modeConflictRules, conflictModes)) conflictRulesModified = true;
+		// String o = modeName.trim().toUpperCase();
+		// Set<String> modeList = modeConflictRules.get(o);
+		// if (null == modeList) {
+		// modeList = new TreeSet<String>();
+		// modeConflictRules.put(o, modeList);
+		// }
+		// for (String conflictMode : conflictModes) {
+		// String mode = conflictMode.trim().toUpperCase();
+		// if (!"".equals(mode)) {
+		// if (modeList.add(mode)) conflictRulesModified = true;
+		// }
+		// }
+		// if (modeList.size() == 0) modeConversionRules.remove(o);
 	}
 
 	/**
@@ -291,14 +450,15 @@ public abstract class TheoryCore implements Serializable {
 	 * @param conflictMode
 	 */
 	public void removeModeConflictRule(final String modeName, final String conflictMode) {
-		String modeNameUpper = modeName.trim().toUpperCase();
-		String conflictModeUpper = conflictMode.trim().toUpperCase();
-		Set<String> modeList = modeConflictRules.get(modeNameUpper);
-		if (null == modeList) return;
-		if (modeList.remove(conflictModeUpper)) {
-			if (modeList.size() == 0) modeConflictRules.remove(modeNameUpper);
-			conflictRulesModified = true;
-		}
+		if (removeModeFromSet(modeName, modeConflictRules, conflictMode)) conflictRulesModified = true;
+		// String modeNameUpper = modeName.trim().toUpperCase();
+		// String conflictModeUpper = conflictMode.trim().toUpperCase();
+		// Set<String> modeList = modeConflictRules.get(modeNameUpper);
+		// if (null == modeList) return;
+		// if (modeList.remove(conflictModeUpper)) {
+		// if (modeList.size() == 0) modeConflictRules.remove(modeNameUpper);
+		// conflictRulesModified = true;
+		// }
 	}
 
 	/**
@@ -337,6 +497,13 @@ public abstract class TheoryCore implements Serializable {
 	}
 
 	/**
+	 * reset all mode exclusion rules
+	 */
+	public void resetExclusionRulesModified() {
+		exclusionRulesModified = false;
+	}
+
+	/**
 	 * add new fact to theory
 	 * 
 	 * @param fact
@@ -367,12 +534,12 @@ public abstract class TheoryCore implements Serializable {
 		if (newRule == null) throw new TheoryException(ErrorMessage.RULE_NULL_RULE);
 
 		// throw exception if rule contains no head literals
-		if (newRule.getHeadLiterals().size() == 0) throw new RuleException(ErrorMessage.RULE_NO_HEAD_LITERAL,
-				new Object[] { newRule.getLabel() });
+		if (newRule.getHeadLiterals().size() == 0)
+			throw new RuleException(ErrorMessage.RULE_NO_HEAD_LITERAL, new Object[] { newRule.getLabel() });
 
 		// add rule to the theory if it does not already exist
-		if (factsAndAllRules.containsKey(newRule.getLabel())) throw new TheoryException(
-				ErrorMessage.RULE_ALREADY_EXISTS, new Object[] { newRule.getLabel() });
+		if (factsAndAllRules.containsKey(newRule.getLabel()))
+			throw new TheoryException(ErrorMessage.RULE_ALREADY_EXISTS, new Object[] { newRule.getLabel() });
 		switch (newRule.getRuleType()) {
 		case FACT:
 			factsAndAllRules.put(newRule.getLabel(), newRule);
@@ -394,6 +561,9 @@ public abstract class TheoryCore implements Serializable {
 
 		// update literal-rule association list
 		updateLiteralRuleAssociationList_addRule(newRule);
+
+		// update mixed literals sets
+		updateMixedLiteralsSets_add(newRule);
 	}
 
 	/**
@@ -405,8 +575,8 @@ public abstract class TheoryCore implements Serializable {
 	 * @throws TheoryException
 	 */
 	public void removeRule(final String ruleLabel) throws TheoryException {
-		if (!factsAndAllRules.containsKey(ruleLabel)) throw new TheoryException(ErrorMessage.RULE_UNRECOGNIZED_RULE_ID,
-				new Object[] { ruleLabel });
+		if (!factsAndAllRules.containsKey(ruleLabel))
+			throw new TheoryException(ErrorMessage.RULE_UNRECOGNIZED_RULE_ID, new Object[] { ruleLabel });
 
 		Rule rule = factsAndAllRules.get(ruleLabel);
 		if (rule == null) throw new TheoryException(ErrorMessage.RULE_NULL_RULE);
@@ -415,6 +585,9 @@ public abstract class TheoryCore implements Serializable {
 
 		// update literal-rule association list
 		updateLiteralRuleAssociationList_removeRule(rule);
+
+		// updated mixed literals sets
+		updateMixedLiteralsSets_remove(rule);
 
 		// delete the rule from the rule set
 		factsAndAllRules.remove(ruleLabel);
@@ -453,6 +626,8 @@ public abstract class TheoryCore implements Serializable {
 					if (!rule.isHeadLiteral(literal)) ruleList.remove(rule.getLabel());
 				}
 				if (ruleList.size() == 0) literalRuleAssoList.remove(literal);
+
+				if (rulesModified.size() > 0) updateMixedLiteralsSets_remove(literal, ruleType);
 			}
 			return rulesModified;
 		} catch (Exception e) {
@@ -563,21 +738,37 @@ public abstract class TheoryCore implements Serializable {
 	}
 
 	private void updateLiteralRuleAssociationList_addRule(final Rule newRule) throws TheoryException {
-		Set<Literal> literalList = newRule.getLiteralList();
+		// Set<Literal> literalList = newRule.getLiteralList();
 		Map<String, Rule> ruleList = null;
-		if (newRule.containsTemporalInfo()) theoryType = TheoryType.TDL;
-		else if (!"".equals(newRule.getMode().getName()) && theoryType == TheoryType.SDL) theoryType = TheoryType.MDL;
-		for (Literal literal : literalList) {
-			// theory type checking
-			// if literal contains mode value, theory type = MDL
-			if (literal.containsTemporalInfo()) theoryType = TheoryType.TDL;
-			else if (!"".equals(literal.getMode().getName()) && theoryType == TheoryType.SDL) theoryType = TheoryType.MDL;
+
+		// theory type checking
+		if (newRule.hasTemporalInfo()) theoryType = TheoryType.TDL;
+		else if (newRule.hasModalInfo() && theoryType.compareTo(TheoryType.SDL) <= 0) theoryType = TheoryType.MDL;
+		// else if (!"".equals(newRule.getMode().getName()) && theoryType == TheoryType.SDL) theoryType =
+		// TheoryType.MDL;
+
+		for (Literal literal : newRule.getLiteralList()) {
+			// for (Literal l : newRule.getLiteralList()) {
+			// Literal literal=l instanceof LiteralVariable ? DomUtilities.getLiteral(l):l;
+			// for (Literal literal : literalList) {
+			// if (literal.containsTemporalInfo()) theoryType = TheoryType.TDL;
+			// else if (!"".equals(literal.getMode().getName()) && theoryType == TheoryType.SDL) theoryType =
+			// TheoryType.MDL;
 
 			ruleList = literalRuleAssoList.get(literal);
 			if (null == ruleList) {
 				ruleList = new TreeMap<String, Rule>();
+				// if (literal instanceof LiteralVariable){
+				// Literal l=DomUtilities.getLiteral(literal);
+				// Map<String,Rule>ruleList2=literalRuleAssoList.get(l);
+				// if (null!=ruleList2){
+				// ruleList.putAll(ruleList2);
+				// literalRuleAssoList.remove(l);
+				// }
+				// }
 				literalRuleAssoList.put(literal, ruleList);
 			}
+
 			if (!ruleList.containsKey(newRule.getLabel())) ruleList.put(newRule.getLabel(), newRule);
 
 			// literal variable and boolean operation handling
@@ -592,13 +783,22 @@ public abstract class TheoryCore implements Serializable {
 	private void updateLiteralRuleAssociationList_removeRule(final Rule rule) throws TheoryException {
 		try {
 			for (Literal literal : rule.getLiteralList()) {
-				Map<String, Rule> ruleList = literalRuleAssoList.get(literal);
-				if (null == ruleList) throw new TheoryException(
-						"updateLiteralRuleAssociationList_removeRule: literal [" + literal + "] contains in no rules!!");
-				Rule retn = ruleList.remove(rule.getLabel());
-				if (null == retn) throw new TheoryException(ErrorMessage.RULE_UNRECOGNIZED_RULE_ID,
-						"updateLiteralRuleAssociationList_removeRule", new Object[] { rule.getLabel() });
+				// for (Literal l : rule.getLiteralList()) {
+				// Literal literal=l instanceof LiteralVariable ? DomUtilities.getLiteral(l):l;
 
+				Map<String, Rule> ruleList = literalRuleAssoList.get(literal);
+				if (null == ruleList) {
+					System.out.println("e1, literal=" + literal + "\n" + toString());
+					throw new TheoryException("updateLiteralRuleAssociationList_removeRule1: literal [" + literal
+							+ "] contains in no rules!!");
+				}
+				Rule retn = ruleList.remove(rule.getLabel());
+				if (null == retn) {
+					System.out.println("e2, literal=" + literal + ": ruleLabel=" + rule.getLabel() + "\nruleList=" + ruleList + "\n"
+							+ toString());
+					throw new TheoryException(ErrorMessage.RULE_UNRECOGNIZED_RULE_ID, "updateLiteralRuleAssociationList_removeRule2:"
+							+ rule.toString(), new Object[] { rule.getLabel() });
+				}
 				if (ruleList.size() == 0) {
 					literalRuleAssoList.remove(literal);
 
@@ -611,7 +811,8 @@ public abstract class TheoryCore implements Serializable {
 				}
 			}
 		} catch (Exception e) {
-			throw new TheoryException("exception throw while updating literal-rule association list", e);
+			System.err.println(rule);
+			throw new TheoryException("exception throw while updating literal-rule association list:" + rule.toString(), e);
 		}
 	}
 
@@ -627,16 +828,74 @@ public abstract class TheoryCore implements Serializable {
 	private void updateRuleTypeAssociationList_removeRule(final Rule rule) throws TheoryException {
 		try {
 			Map<String, Rule> ruleSet = ruleTypeAssoList.get(rule.getRuleType());
-			if (null == ruleSet) throw new TheoryException("Rule type not exist in the theory set");
+			if (null == ruleSet) throw new TheoryException("Rule type not exist in the theory");
 
 			Rule retn = ruleSet.remove(rule.getLabel());
-			if (null == retn) throw new TheoryException(ErrorMessage.RULE_UNRECOGNIZED_RULE_ID_IN_TYPE, new Object[] {
-					rule.getLabel(), rule.getRuleType() });
+			if (null == retn)
+				throw new TheoryException(ErrorMessage.RULE_UNRECOGNIZED_RULE_ID_IN_TYPE, new Object[] { rule.getLabel(),
+						rule.getRuleType() });
 
 			if (ruleSet.size() == 0) ruleTypeAssoList.remove(rule.getRuleType());
 		} catch (Exception e) {
 			throw new TheoryException("exception throw while updating literal-rule association list ", e);
 		}
+	}
+
+	private void updateMixedLiteralsSets_add(final Rule rule) throws TheoryException {
+		int ind = RuleType.STRICT.equals(rule.getRuleType()) ? 0 : 1;
+		for (Literal literal : rule.getLiteralList()) {
+			// for (Literal l : rule.getLiteralList()) {
+			// Literal literal=l instanceof LiteralVariable ? DomUtilities.getLiteral(l):l;
+			TreeSet<Literal> literalSet = mixedLiteralsSets[ind].get(literal);
+			if (null == literalSet) {
+				literalSet = new TreeSet<Literal>();
+				mixedLiteralsSets[ind].put(literal.cloneWithNoTemporal(), literalSet);
+				// mixedLiteralsSets.put(DomUtilities.getPlainLiteral(literal), literalSet);
+			}
+			literalSet.add(literal);
+		}
+
+	}
+
+	private void updateMixedLiteralsSets_remove(final Rule rule) throws TheoryException {
+		for (Literal literal : rule.getLiteralList()) {
+			updateMixedLiteralsSets_remove(literal, rule.getRuleType());
+			// System.out.println("updateMixedLiteralsSets_removeRule("+rule.getLabel()+"):"+literal);
+			// TreeSet<Literal>literalSet=mixedLiteralsSets.get(literal);
+			// if (null==literalSet) throw new TheoryException ("Literal ["+literal+"] not exist in theory");
+			//
+			// System.out.println("updateMixedLiteralsSets_removeRule("+rule.getLabel()+"):"+literal+", literalRuleAssoList.containsKey="+(literalRuleAssoList.containsKey(literal)));
+			// if (literalRuleAssoList.containsKey(literal)){
+			// System.out.println("  "+(literalRuleAssoList.get(literal)));
+			// }
+			// if (literalRuleAssoList.containsKey(literal)) continue;
+			// literalSet.remove(literal);
+			// System.out.println("  literalSet="+(literalSet)+","+literalSet.size());
+			// if (literalSet.size()==0) {
+			// mixedLiteralsSets.remove(literal);
+			// System.out.println("  mixedLiteralsSets="+(mixedLiteralsSets.containsKey(literal)));
+			// System.out.println("  mixedLiteralsSets="+(mixedLiteralsSets.keySet()));
+			// }
+		}
+	}
+
+	private void updateMixedLiteralsSets_remove(final Literal literal, RuleType ruleType) throws TheoryException {
+		// if (!AppConst.isDeploy) System.out.println("updateMixedLiteralsSets_removeLiteral:" + literal);
+		if (literalRuleAssoList.containsKey(literal)) {
+			// if (!AppConst.isDeploy) System.out.println("  " + (literalRuleAssoList.get(literal)));
+			return;
+		}
+
+		int ind = RuleType.STRICT.equals(ruleType) ? 0 : 1;
+
+		TreeSet<Literal> literalSet = mixedLiteralsSets[ind].get(literal);
+		if (null == literalSet) throw new TheoryException(ErrorMessage.LITERAL_LITERAL_NOT_EXIST_IN_THEORY, new Object[] { literal });
+		// if (!AppConst.isDeploy)
+		// System.out.println("updateMixedLiteralsSets_removeLiteral:" + literal + ", literalRuleAssoList.containsKey="
+		// + (literalRuleAssoList.containsKey(literal)));
+
+		literalSet.remove(literal);
+		if (literalSet.size() == 0) mixedLiteralsSets[ind].remove(literal);
 	}
 
 	public Map<String, Rule> getFactsAndAllRules() {
@@ -690,6 +949,16 @@ public abstract class TheoryCore implements Serializable {
 	 */
 	public Set<Literal> getAllLiteralsInRules() {
 		return literalRuleAssoList.keySet();
+	}
+
+	/**
+	 * Return the set of literals containing the same set of content but with different temporal intervals.
+	 * 
+	 * @param literal Literal to be extracted.
+	 * @return The set of literals with same content but with different temporal intervals.
+	 */
+	public Set<Literal> getRelatedLiterals(Literal literal, ProvabilityLevel provability) {
+		return mixedLiteralsSets[provability.ordinal()].get(literal);
 	}
 
 	/**
@@ -773,6 +1042,17 @@ public abstract class TheoryCore implements Serializable {
 	 * @return true if there is no rule in the theory
 	 */
 	public boolean isEmpty() {
+		// if (!AppConst.isDeploy) {
+		// System.out.println("mixedLiteralsSets.size()=" + mixedLiteralsSets.size());
+		// if (mixedLiteralsSets.size() > 0) {
+		// StringBuilder sb = new StringBuilder(TextUtilities.generateHighLightedMessage("mixedLiteralsSet"));
+		// for (Entry<Literal, TreeSet<Literal>> entry : mixedLiteralsSets.entrySet()) {
+		// String v = entry.getValue().toString();
+		// sb.append("\n").append(entry.getKey()).append(" ::: ").append(v.substring(1, v.length() - 1));
+		// }
+		// System.out.println(sb.toString());
+		// }
+		// }
 		if (literalVariables.size() > 0) return false;
 		if (literalBooleanFunctions.size() > 0) return false;
 		if (factsAndAllRules.size() > 0) return false;
@@ -861,6 +1141,9 @@ public abstract class TheoryCore implements Serializable {
 		factsAndAllRules.clear();
 		literalRuleAssoList.clear();
 		ruleTypeAssoList.clear();
+		for (int i = 0; i < mixedLiteralsSets.length; i++) {
+			mixedLiteralsSets[i].clear();
+		}
 
 		superiors.clear();
 		inferiors.clear();
@@ -871,6 +1154,7 @@ public abstract class TheoryCore implements Serializable {
 	 * clear the theory
 	 */
 	public void clear() {
+		description = "";
 		clearAllRules();
 		clearModeConversionRules();
 		clearModeConflictRules();
@@ -884,28 +1168,33 @@ public abstract class TheoryCore implements Serializable {
 		modeConflictRules.clear();
 	}
 
+	public void clearModeExclusionRules() {
+		modeExclusionRules.clear();
+	}
+
 	public String toString() {
 		if (isEmpty()) return "** Theory is EMPTY **";
 		StringBuilder sb = new StringBuilder();
 		int v = literalVariables.size() + literalBooleanFunctions.size();
 		String NEW_LINE = LINE_SEPARATOR + DomConst.IDENTATOR;
 
+		if (!"".equals(description)) sb.append(LINE_SEPARATOR).append("Description:").append(NEW_LINE).append(description);
+
 		if (v > 0) {
-			sb.append(LINE_SEPARATOR).append(RuleType.LITERAL_VARIABLE_SET.getLabel()).append(" (").append(v)
-					.append("):");
+			sb.append(LINE_SEPARATOR).append(RuleType.LITERAL_VARIABLE_SET.getLabel()).append(" (").append(v).append("):");
 			for (Entry<LiteralVariable, LiteralVariable> entry : literalVariables.entrySet()) {
-				sb.append(NEW_LINE).append(RuleType.LITERAL_VARIABLE_SET.getSymbol()).append(" ")
-						.append(entry.getKey()).append(DomConst.Literal.THEORY_EQUAL_SIGN).append(entry.getValue());
+				sb.append(NEW_LINE).append(RuleType.LITERAL_VARIABLE_SET.getSymbol()).append(" ").append(entry.getKey())
+						.append(DomConst.Literal.THEORY_EQUAL_SIGN).append(entry.getValue());
 			}
 			for (Entry<LiteralVariable, LiteralVariable> entry : literalBooleanFunctions.entrySet()) {
-				sb.append(NEW_LINE).append(RuleType.LITERAL_VARIABLE_SET.getSymbol()).append(" ")
-						.append(entry.getKey()).append(DomConst.Literal.THEORY_EQUAL_SIGN).append(entry.getValue());
+				sb.append(NEW_LINE).append(RuleType.LITERAL_VARIABLE_SET.getSymbol()).append(" ").append(entry.getKey())
+						.append(DomConst.Literal.THEORY_EQUAL_SIGN).append(entry.getValue());
 			}
 		}
 
 		if (modeConversionRules.size() > 0) {
-			sb.append(LINE_SEPARATOR).append(RuleType.MODE_CONVERSION.getLabel()).append(" (")
-					.append(modeConversionRules.size()).append("):");
+			sb.append(LINE_SEPARATOR).append(RuleType.MODE_CONVERSION.getLabel()).append(" (").append(modeConversionRules.size())
+					.append("):");
 			for (Entry<String, Set<String>> entry : modeConversionRules.entrySet()) {
 				sb.append(NEW_LINE).append(entry.getKey()).append(": ");
 				sb.append(entry.getValue());
@@ -913,12 +1202,19 @@ public abstract class TheoryCore implements Serializable {
 		}
 
 		if (modeConflictRules.size() > 0) {
-			sb.append(LINE_SEPARATOR).append(RuleType.MODE_CONFLICT.getLabel()).append(" (")
-					.append(modeConflictRules.size()).append("):");
+			sb.append(LINE_SEPARATOR).append(RuleType.MODE_CONFLICT.getLabel()).append(" (").append(modeConflictRules.size()).append("):");
 			for (Entry<String, Set<String>> entry : modeConflictRules.entrySet()) {
 				sb.append(NEW_LINE).append(entry.getKey()).append(": ");
 				sb.append(entry.getValue());
 			}
+		}
+		
+		if (modeExclusionRules.size()>0){
+			sb.append(LINE_SEPARATOR).append(RuleType.MODE_EXCLUSION.getLabel()).append(" (").append(modeExclusionRules.size()).append("):");
+			for (Entry<String, Set<String>> entry : modeExclusionRules.entrySet()) {
+				sb.append(NEW_LINE).append(entry.getKey()).append(": ");
+				sb.append(entry.getValue());
+			}			
 		}
 
 		Map<String, Rule> ruleSet = null;
@@ -942,6 +1238,38 @@ public abstract class TheoryCore implements Serializable {
 				}
 			}
 		}
+
+		if (!AppConst.isDeploy) {
+			if (literalVariablesInRules.size() > 0) {
+				sb.append(LINE_SEPARATOR).append("literalVariablesInRules");
+				for (LiteralVariable lv : literalVariablesInRules) {
+					sb.append(NEW_LINE).append(lv);
+				}
+			}
+		}
+		// if (!AppConst.isDeploy){
+		// sb.append("\n").append(TextUtilities.generateHighLightedMessage("Literal rule association list"));
+		// for( Entry<Literal, Map<String, Rule>> entry:literalRuleAssoList.entrySet()){
+		// sb.append(LINE_SEPARATOR).append(entry.getKey()).append(":").append(entry.getKey().getClass().getName());
+		// for (String ruleLabel:entry.getValue().keySet()){
+		// sb.append(NEW_LINE).append(ruleLabel);
+		// }
+		// }
+		// }
+		// if (!AppConst.isDeploy) {
+		// for (int i = 0; i < mixedLiteralsSets.length; i++) {
+		// if (mixedLiteralsSets[i].size() > 0) {
+		// sb.append(LINE_SEPARATOR).append(TextUtilities.generateHighLightedMessage("Mixed literals sets"));
+		// for (Entry<Literal, TreeSet<Literal>> entry : mixedLiteralsSets[i].entrySet()) {
+		// sb.append(LINE_SEPARATOR).append(entry.getKey());
+		// for (Literal literal : entry.getValue()) {
+		// sb.append(NEW_LINE).append(literal);
+		// }
+		// }
+		// }
+		// }
+		// }
+
 		return sb.toString().substring(LINE_SEPARATOR.length());
 	}
 }

@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -46,8 +46,9 @@ import spindle.engine.TheoryNormalizer;
 import spindle.engine.TheoryNormalizerListener;
 import spindle.io.IOManager;
 import spindle.io.OutputterException;
-import spindle.io.outputter.XmlTheoryOutputter;
+import spindle.io.outputter.XmlTheoryOutputter2;
 import spindle.sys.AppConst;
+import spindle.sys.AppFeatureConst;
 import spindle.sys.AppLogger;
 import spindle.sys.AppModuleBase;
 import spindle.sys.AppModuleListener;
@@ -216,7 +217,7 @@ public abstract class ReasonerBase extends AppModuleBase //
 	protected ProcessStatus setConclusions(Map<Literal, Map<ConclusionType, Conclusion>> tempConclusions)
 			throws ReasonerException {
 		if (null == tempConclusions || tempConclusions.size() == 0) throw new ReasonerException(
-				ErrorMessage.CONCLUSION_NULL_CONCLUSION);
+				ErrorMessage.CONCLUSION_NULL_CONCLUSIONS_SET);
 		conclusions = new TreeMap<Literal, Map<ConclusionType, Conclusion>>();
 		Set<Conclusion> tempConclusionList = new TreeSet<Conclusion>();
 		for (Entry<Literal, Map<ConclusionType, Conclusion>> entry : tempConclusions.entrySet()) {
@@ -240,7 +241,7 @@ public abstract class ReasonerBase extends AppModuleBase //
 
 	public String getConclusionsAsXmlString() throws ReasonerException {
 		try {
-			return XmlTheoryOutputter.getConclusionsAsXmlString(getConclusionsAsList());
+			return XmlTheoryOutputter2.getConclusionsAsXmlString(getConclusionsAsList());
 		} catch (OutputterException e) {
 			fireOnReasonerMessage(MessageType.ERROR, e.getMessage());
 			throw new ReasonerException("Exception throw while executing getConclusionsAsXmlString()", e);
@@ -266,7 +267,7 @@ public abstract class ReasonerBase extends AppModuleBase //
 
 	public ProcessStatus saveConclusions(final File filename) throws ReasonerException {
 		if (null == conclusionsAsList || conclusionsAsList.size() == 0) throw new ReasonerException(
-				ErrorMessage.CONCLUSION_NULL_CONCLUSION);
+				ErrorMessage.CONCLUSION_NULL_CONCLUSIONS_SET);
 
 		String filenameStr = filename.toString();
 		String msg = Messages.getSystemMessage(SystemMessage.IO_SAVE_CONCLUSIONS, new Object[] { filenameStr });
@@ -291,13 +292,13 @@ public abstract class ReasonerBase extends AppModuleBase //
 
 	public void printConclusions() {
 		if (null == conclusions || conclusions.size() == 0) {
-			this.fireOnReasonerMessage(MessageType.WARNING,
-					Messages.getErrorMessage(ErrorMessage.CONCLUSION_NULL_CONCLUSION));
+			fireOnReasonerMessage(MessageType.WARNING,
+					Messages.getErrorMessage(ErrorMessage.CONCLUSION_NULL_CONCLUSIONS_SET));
 			return;
 		}
 		StringBuilder sb = new StringBuilder();
 		sb.append(Messages.getSystemMessage(SystemMessage.REASONER_CONCLUSIONS_GENERATED));
-		if (AppConst.isPrintConclusionByType) {
+		if (AppFeatureConst.isPrintConclusionByType) {
 			List<Conclusion> cLst = conclusionsAsList;
 			for (Conclusion c : cLst) {
 				sb.append(LINE_SEPARATOR).append(AppConst.IDENTATOR).append(c.toString());

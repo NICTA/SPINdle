@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -23,7 +23,7 @@ package spindle.core.dom;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import spindle.sys.AppConst;
+import spindle.sys.AppFeatureConst;
 import spindle.sys.message.ErrorMessage;
 
 /**
@@ -118,7 +118,7 @@ public class RuleExt extends spindle.core.dom.Rule {
 
 	@Override
 	protected String getRuleLabelInfo() {
-		if (AppConst.isPrintExtendedRuleInfo) {
+		if (AppFeatureConst.isPrintExtendedRuleInfo) {
 			return super.getRuleLabelInfo() //
 					+ "(" + strongerRulesCount + "," + weakerRulesCount + "," + isActive() + ")";
 		} else {

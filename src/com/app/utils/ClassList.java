@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -43,8 +43,8 @@ public class ClassList {
 		this.classLoader = ResourcesUtils.class.getClassLoader();
 	}
 
-	public Map<String, Set<String>> findClass(Set<String> interfaceFilter, Set<String> packageFilter, Set<String> jarFilter) throws IOException,
-			ClassNotFoundException {
+	public Map<String, Set<String>> findClass(Set<String> interfaceFilter, Set<String> packageFilter, Set<String> jarFilter)
+			throws IOException, ClassNotFoundException {
 		this.interfaceFilter = (null == interfaceFilter) ? new HashSet<String>() : interfaceFilter;
 		this.packageFilter = (null == packageFilter) ? new HashSet<String>() : packageFilter;
 		this.jarFilter = (null == jarFilter) ? new HashSet<String>() : jarFilter;
@@ -82,12 +82,17 @@ public class ClassList {
 					if (null != interfaceNames && interfaceNames.size() > 0) {
 						Set<String> classList = null;
 						for (String interfaceName : interfaceNames) {
-							if (classTable.containsKey(interfaceName)) {
-								classList = classTable.get(interfaceName);
-							} else {
+							classList = classTable.get(interfaceName);
+							if (null == classList) {
 								classList = new HashSet<String>();
 								classTable.put(interfaceName, classList);
 							}
+							// if (classTable.containsKey(interfaceName)) {
+							// classList = classTable.get(interfaceName);
+							// } else {
+							// classList = new HashSet<String>();
+							// classTable.put(interfaceName, classList);
+							// }
 							if (!classList.contains(className)) classList.add(className);
 						}
 					}
