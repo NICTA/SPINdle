@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -58,9 +58,9 @@ public class LiteralVariable extends Literal {
 		this(name, isNegation, mode, predicates, literalPredicates, true);
 	}
 
-	protected LiteralVariable(String name, boolean isNegation, Mode mode, String[] predicates,
-			Literal[] literalPredicates, boolean isValidateName) {
-		super(name, isNegation, mode, null,predicates, true);
+	protected LiteralVariable(String name, boolean isNegation, Mode mode, String[] predicates, Literal[] literalPredicates,
+			boolean isValidateName) {
+		super(name, isNegation, mode, null, predicates, true);
 		setupLiteralVariable(literalPredicates, isValidateName);
 	}
 
@@ -70,8 +70,7 @@ public class LiteralVariable extends Literal {
 
 	protected LiteralVariable(Literal literal, boolean isValidateName) {
 		super(literal);
-		Literal[] literalPredicates = literal instanceof LiteralVariable ? ((LiteralVariable) literal).literalPredicates
-				: null;
+		Literal[] literalPredicates = literal instanceof LiteralVariable ? ((LiteralVariable) literal).literalPredicates : null;
 		setupLiteralVariable(literalPredicates, isValidateName);
 	}
 
@@ -84,11 +83,11 @@ public class LiteralVariable extends Literal {
 	private void validateName() {
 		if (isLiteralVariable()) {
 		} else if (isLiteralBooleanFunction()) {
-//			try {
-				setName(name);
-	//		} catch (Exception e) {
-		//		throw new IllegalArgumentException(e);
-			//}
+			// try {
+			setName(name);
+			// } catch (Exception e) {
+			// throw new IllegalArgumentException(e);
+			// }
 		} else throw new IllegalArgumentException(Messages.getErrorMessage(ErrorMessage.LITERAL_VARIABLE_PREFIX_ERROR,
 				new Object[] { name }));
 	}
@@ -218,7 +217,8 @@ public class LiteralVariable extends Literal {
 			StringBuilder sbP = new StringBuilder();
 			for (int i = 0; i < literalPredicates.length; i++) {
 				if (i > 0) sbP.append(",");
-				if (null == literalPredicates[i]) sbP.append("null");
+				if (null == literalPredicates[i])
+					sbP.append("null");
 				else sbP.append(literalPredicates[i].toString());
 			}
 			if (sb.length() > 0) {

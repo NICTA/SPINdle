@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -21,8 +21,11 @@
  */
 package spindle.engine;
 
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -61,8 +64,7 @@ import spindle.tools.explanation.InferenceLogger;
  * @version Last modified 2012.07.21
  */
 public abstract class ReasoningEngineBase extends AppModuleBase implements ReasoningEngine {
-
-	private static final String SUMMARY_BORDER = "=================================================";
+	public static final String STRICT_TO_DEFEASIBLE_POSTFIX = "_s2d";
 
 	private static ReasoningEngineUtilities reasoningEngineUtilities = null;
 
@@ -74,7 +76,7 @@ public abstract class ReasoningEngineBase extends AppModuleBase implements Reaso
 
 	protected Map<Literal, Map<ConclusionType, Conclusion>> _conclusions = null;
 
-	protected Map<Literal, Map<ConclusionType, Conclusion>> records = null;
+	private Map<Literal, Set<ConclusionType>> records = null;
 
 	private Timer timer = null;
 
@@ -90,28 +92,28 @@ public abstract class ReasoningEngineBase extends AppModuleBase implements Reaso
 	}
 
 	@Override
-	public Map<Literal, Map<ConclusionType, Conclusion>> getConclusions(final Theory theory)
-			throws ReasoningEngineException {
+	public Map<Literal, Map<ConclusionType, Conclusion>> getConclusions(final Theory theory) throws ReasoningEngineException {
 		clear();
 		if (theory == null) throw new ReasoningEngineException(getClass(), ErrorMessage.THEORY_NULL_THEORY);
-		if (theory.isEmpty())throw new ReasoningEngineException(getClass(),ErrorMessage.THEORY_EMPTY_THEORY);
+		if (theory.isEmpty()) throw new ReasoningEngineException(getClass(), ErrorMessage.THEORY_EMPTY_THEORY);
 
 		// this.theory = (Conf.isCloneTheoryInReasoner()) ? theory.clone() : theory;
 		this.theory = theory;
 
-		if (this.theory.getLiteralVariablesInRulesCount() > 0) throw new ReasoningEngineException(getClass(),
-				ErrorMessage.REASONING_ENGINE_LITERAL_VARIABLES_NOT_YET_EVALUATED);
-		if (this.theory.getLiteralBooleanFunctionCount() > 0) throw new ReasoningEngineException(getClass(),
-				ErrorMessage.REASONING_ENGINE_LITERAL_BOOLEAN_FUNCTION_NOT_YET_EVALUATED);
+//		if (this.theory.getLiteralVariableCount() > 0)
+		if (this.theory.getLiteralVariablesInRulesCount() > 0)
+			throw new ReasoningEngineException(getClass(), ErrorMessage.REASONING_ENGINE_LITERAL_VARIABLES_NOT_YET_EVALUATED);
+		if (this.theory.getLiteralBooleanFunctionCount() > 0)
+			throw new ReasoningEngineException(getClass(), ErrorMessage.REASONING_ENGINE_LITERAL_BOOLEAN_FUNCTION_NOT_YET_EVALUATED);
 
-		if (this.theory.getFactsCount() > 0) throw new ReasoningEngineException(getClass(),
-				ErrorMessage.THEORY_NOT_IN_REGULAR_FORM_CONTAINS_FACT);
-		if (this.theory.getDefeatersCount() > 0) throw new ReasoningEngineException(getClass(),
-				ErrorMessage.THEORY_NOT_IN_REGULAR_FORM_CONTAINS_DFEATER);
+		if (this.theory.getFactsCount() > 0)
+			throw new ReasoningEngineException(getClass(), ErrorMessage.THEORY_NOT_IN_REGULAR_FORM_CONTAINS_FACT);
+		if (this.theory.getDefeatersCount() > 0)
+			throw new ReasoningEngineException(getClass(), ErrorMessage.THEORY_NOT_IN_REGULAR_FORM_CONTAINS_DFEATER);
 		switch (Conf.getReasonerVersion()) {
 		case 1:
-			if (this.theory.getSuperiorityCount() > 0) throw new ReasoningEngineException(getClass(),
-					ErrorMessage.THEORY_NOT_IN_REGULAR_FORM_CONTAINS_SUPERIORITY_RELATION);
+			if (this.theory.getSuperiorityCount() > 0)
+				throw new ReasoningEngineException(getClass(), ErrorMessage.THEORY_NOT_IN_REGULAR_FORM_CONTAINS_SUPERIORITY_RELATION);
 			break;
 		default:
 		}
@@ -121,20 +123,11 @@ public abstract class ReasoningEngineBase extends AppModuleBase implements Reaso
 		strictRules = this.theory.getRules(RuleType.STRICT);
 		defeasibleRules = this.theory.getRules(RuleType.DEFEASIBLE);
 
-		records = new TreeMap<Literal, Map<ConclusionType, Conclusion>>();
+		//records = new TreeMap<Literal, Map<ConclusionType, Conclusion>>();
+		records=new TreeMap<Literal,Set<ConclusionType>>();
 
-		if (Conf.isShowProgress()) {
-			StringBuilder sb = new StringBuilder();
-			sb.append(SUMMARY_BORDER) //
-					.append("\ntheory (regular form) summary") //
-					.append("\n-----------------------------") //
-					.append("\ntheory size=" + this.theory.getFactsAndAllRules().size()) //
-					.append("\nnumber of literals=" + this.theory.getAllLiteralsInRules().size()) //
-					.append("\nnumber of strict rule(s)=" + this.theory.getStrictRulesCount()) //
-					.append("\nnumber of defeasible rule(s)=" + this.theory.getDefeasibleRulesCount()) //
-					.append("\n").append(SUMMARY_BORDER);
-			System.out.println(sb.toString());
-		}
+		if (Conf.isShowProgress()) getReasoningEngineUtilities().printTheorySummary(this.theory);
+
 		try {
 			isLogInferenceProcess = Conf.isLogInferenceProcess();
 
@@ -163,8 +156,8 @@ public abstract class ReasoningEngineBase extends AppModuleBase implements Reaso
 			}
 
 			_generateConclusions();
-			if (Conf.isShowProgress()) System.out.println(Messages
-					.getSystemMessage(SystemMessage.REASONING_ENGINE_ALL_PENDING_CONCLUSIONS_ARE_EVALUATED));
+			if (Conf.isShowProgress())
+				System.out.println(Messages.getSystemMessage(SystemMessage.REASONING_ENGINE_ALL_PENDING_CONCLUSIONS_ARE_EVALUATED));
 			if (isLogInferenceProcess) fireSetInferenceLogger();
 			_terminate();
 			return _conclusions;
@@ -198,8 +191,8 @@ public abstract class ReasoningEngineBase extends AppModuleBase implements Reaso
 			switch (rule.getRuleType()) {
 			case STRICT:
 				ruleRemoved = strictRules.remove(ruleLabel);
-				if (null == ruleRemoved) throw new ReasoningEngineException(getClass(),
-						"removeRule: strict rule NOT found! ruleLabel=" + ruleLabel);
+				if (null == ruleRemoved)
+					throw new ReasoningEngineException(getClass(), "removeRule: strict rule NOT found! ruleLabel=" + ruleLabel);
 				try {
 					theory.removeRule(ruleLabel);
 					logMessage(Level.FINE, 0, "removeRule: strict rule", ruleLabel, " - removed");
@@ -209,8 +202,8 @@ public abstract class ReasoningEngineBase extends AppModuleBase implements Reaso
 				break;
 			case DEFEASIBLE:
 				ruleRemoved = defeasibleRules.get(ruleLabel);
-				if (null == ruleRemoved) throw new ReasoningEngineException(getClass(),
-						"removeRule: defeasible rule NOT found! ruleLabel=" + ruleLabel);
+				if (null == ruleRemoved)
+					throw new ReasoningEngineException(getClass(), "removeRule: defeasible rule NOT found! ruleLabel=" + ruleLabel);
 				try {
 					switch (Conf.getReasonerVersion()) {
 					case 2:
@@ -251,15 +244,15 @@ public abstract class ReasoningEngineBase extends AppModuleBase implements Reaso
 		}
 	}
 
-	protected List<Literal> getConflictLiterals(final Literal literal) {
-		List<Literal> conflictLiterals = theory.getConflictLiterals(literal);
-		logMessage(Level.FINEST, 2, "*** ", literal, "conflict literals=", conflictLiterals);
+	
+	protected Set<Literal> getConflictLiterals(final Literal literal) {
+		Set<Literal> conflictLiterals = theory.getConflictLiterals(literal);
+		//logMessage(Level.FINEST, 2, "*** ", literal, "conflict literals=", conflictLiterals);
 		return conflictLiterals;
 	}
 
 	private ProcessStatus _generateConclusions() throws ReasoningEngineException {
-		logMessage(Level.INFO, 0,
-				Messages.getSystemMessage(SystemMessage.REASONING_ENGINE_CONCLUSIONS_GENERATION_START));
+		logMessage(Level.INFO, 0, Messages.getSystemMessage(SystemMessage.REASONING_ENGINE_CONCLUSIONS_GENERATION_START));
 		generateConclusions();
 		logMessage(Level.INFO, 0, Messages.getSystemMessage(SystemMessage.REASONING_ENGINE_CONCLUSIONS_GENERATION_END));
 
@@ -283,6 +276,7 @@ public abstract class ReasoningEngineBase extends AppModuleBase implements Reaso
 	}
 
 	protected ProcessStatus setConclusion(Map<Literal, Map<ConclusionType, Conclusion>> conclusions) {
+		// protected ProcessStatus setConclusion(Map<Literal, Map<ConclusionType, Conclusion>> conclusions) {
 		this._conclusions = conclusions;
 		return ProcessStatus.SUCCESS;
 	}
@@ -298,15 +292,14 @@ public abstract class ReasoningEngineBase extends AppModuleBase implements Reaso
 				pendingConclusionSet);
 		Set<Conclusion> conclusionsToRemove = new TreeSet<Conclusion>();
 
-		StringBuilder sb = null;
-		if (!AppConst.isDeploy) sb = new StringBuilder();
-
 		if (AppConst.isDeploy) {
 			// if in deploy mode, execute the loop without appending the string builder.
-			for (Literal literal : pendingConclusionSet.keySet()) {
-				Map<ConclusionType, Conclusion> conclusionsSet = pendingConclusionSet.get(literal);
-				Map<ConclusionType, Conclusion> complementConclusionsSet = pendingConclusionSet.get(literal
-						.getComplementClone());
+			for (Entry<Literal,Map<ConclusionType,Conclusion>>literalEntry:pendingConclusionSet.entrySet()){
+				Literal literal=literalEntry.getKey();
+				Map<ConclusionType,Conclusion> conclusionsSet=literalEntry.getValue();
+//			for (Literal literal : pendingConclusionSet.keySet()) {
+//				Map<ConclusionType, Conclusion> conclusionsSet = pendingConclusionSet.get(literal);
+				Map<ConclusionType, Conclusion> complementConclusionsSet = pendingConclusionSet.get(literal.getComplementClone());
 				for (Conclusion conclusion : conclusionsSet.values()) {
 					if (conclusion.isConflictWith(conclusionsSet.values())) {
 						conclusionsToRemove.add(conclusion);
@@ -320,38 +313,38 @@ public abstract class ReasoningEngineBase extends AppModuleBase implements Reaso
 			}
 		} else {
 			// otherwise, execute the loop with string appending.
-			// code duplicated here due to efficiency purpose
-			for (Literal literal : pendingConclusionSet.keySet()) {
-				if (!AppConst.isDeploy) sb.append(LINE_SEPARATOR).append("for literal: ").append(literal.toString());
-				Map<ConclusionType, Conclusion> conclusionsSet = pendingConclusionSet.get(literal);
-				Map<ConclusionType, Conclusion> complementConclusionsSet = pendingConclusionSet.get(literal
-						.getComplementClone());
+			// ** code duplicated here due to efficiency purpose.
+			StringBuilder sb = new StringBuilder();
+			for (Entry<Literal,Map<ConclusionType,Conclusion>>literalEntry:pendingConclusionSet.entrySet()){
+				Literal literal=literalEntry.getKey();
+				Map<ConclusionType,Conclusion> conclusionsSet=literalEntry.getValue();			
+//			for (Literal literal : pendingConclusionSet.keySet()) {
+				sb.append(LINE_SEPARATOR).append("for literal: ").append(literal.toString());
+//				Map<ConclusionType, Conclusion> conclusionsSet = pendingConclusionSet.get(literal);
+				Map<ConclusionType, Conclusion> complementConclusionsSet = pendingConclusionSet.get(literal.getComplementClone());
 				for (Conclusion conclusion : conclusionsSet.values()) {
 					ConclusionType conclusionType = conclusion.getConclusionType();
-					if (!AppConst.isDeploy) sb.append(LINE_SEPARATOR).append(AppConst.IDENTATOR)
-							.append("Check conclusion: " + conclusion.toString());
+					sb.append(LINE_SEPARATOR).append(AppConst.IDENTATOR).append("Check conclusion: ").append(conclusion.toString());
 					if (conclusion.isConflictWith(conclusionsSet.values())) {
 						conclusionsToRemove.add(conclusion);
-						if (!AppConst.isDeploy) sb.append(LINE_SEPARATOR).append(AppConst.IDENTATOR)
-								.append("conclusion contains conflict, remove conclusion type: ")
-								.append(conclusionType.toString());
+						sb.append(LINE_SEPARATOR).append(AppConst.IDENTATOR)
+								.append("conclusion contains conflict, remove conclusion type: ").append(conclusionType.toString());
 					}
 					if (complementConclusionsSet != null) {
 						if (conclusion.isConflictWith(complementConclusionsSet.values())) {
 							conclusionsToRemove.add(conclusion);
-							if (!AppConst.isDeploy) sb.append(LINE_SEPARATOR).append(AppConst.IDENTATOR)
-									.append("conclusion contains conflict, remove conclusion type: ")
-									.append(conclusionType.toString());
+							sb.append(LINE_SEPARATOR).append(AppConst.IDENTATOR)
+									.append("conclusion contains conflict, remove conclusion type: ").append(conclusionType.toString());
 						}
 					}
 				}
 			}
 			logMessage(Level.INFO, 0, sb.toString());
 		}
+		
 		if (conclusionsToRemove.size() > 0) {
 			for (Conclusion conclusionToRemove : conclusionsToRemove) {
-				Map<ConclusionType, Conclusion> conclusionsList = verifiedConclusions.get(conclusionToRemove
-						.getLiteral());
+				Map<ConclusionType, Conclusion> conclusionsList = verifiedConclusions.get(conclusionToRemove.getLiteral());
 				ConclusionType conclusionType = conclusionToRemove.getConclusionType();
 				conclusionsList.remove(conclusionType);
 				if (conclusionsList.size() == 0) verifiedConclusions.remove(conclusionToRemove.getLiteral());
@@ -373,6 +366,35 @@ public abstract class ReasoningEngineBase extends AppModuleBase implements Reaso
 
 	public Set<Literal> getInapplicableLiteralsBeforeInference(ConclusionType conclusionType) {
 		return inapplicableLiteralsBeforeInference.get(conclusionType);
+	}
+
+	protected ProcessStatus duplicateStrictRulesToDefeasibleRules() throws ReasoningEngineException {
+		List<Rule> newDefeasibleRules = theory
+				.duplicateRulesToType(strictRules.values(), RuleType.DEFEASIBLE, STRICT_TO_DEFEASIBLE_POSTFIX);
+		for (Rule rule : newDefeasibleRules) {
+			try {
+				theory.addRule(rule);
+			} catch (TheoryException e) {
+				throw new ReasoningEngineException(getClass(), "Exception throw while duplicating strict rules, rule=" + rule.toString(), e);
+			}
+		}
+		return ProcessStatus.SUCCESS;
+	}
+
+	protected boolean containsUnprovedRuleInTheory(final Collection<Literal> literals, final RuleType ruleType) {
+//		if (null==literals||literals.size()==0)return true;
+		for (Literal literal : literals) {
+			if (theory.containsUnprovedRule(literal, ruleType, true)) return true;
+		}
+		return false;
+	}
+
+	protected TreeSet<Literal> extractLiteralsFromConclusions(Collection<Conclusion> conclusions) {
+		TreeSet<Literal> literals = new TreeSet<Literal>();
+		for (Conclusion conclusion : conclusions) {
+			literals.add(conclusion.getLiteral());
+		}
+		return literals;
 	}
 
 	/**
@@ -421,38 +443,67 @@ public abstract class ReasoningEngineBase extends AppModuleBase implements Reaso
 		return inferenceLogger;
 	}
 
-	protected ProcessStatus addRecord(Conclusion conclusion) {
-		logMessage(Level.FINE, 3, "record added: ", conclusion);
+//	protected Map<Literal, Map<ConclusionType, Conclusion>> getRecords() {
+//		return records;
+//	}
+	protected Map<Literal,Set<ConclusionType>>getRecords(){
+		return records;
+	}
 
-		Literal literal = conclusion.getLiteral();
-		Map<ConclusionType, Conclusion> recordsList = records.get(literal);
-		if (null == recordsList) {
-			recordsList = new TreeMap<ConclusionType, Conclusion>();
-			records.put(literal, recordsList);
+	protected ProcessStatus addRecord(ConclusionType conclusionType,Literal literal){
+		logMessage(Level.FINE, 3, "record added: ", conclusionType.getSymbol(),literal);
+
+		Set<ConclusionType> recordList=records.get(literal);
+		if (null==recordList){
+			recordList=new TreeSet<ConclusionType>();
+			records.put(literal, recordList);
 		}
-		recordsList.put(conclusion.getConclusionType(), conclusion);
-
+		recordList.add(conclusionType);
 		return ProcessStatus.SUCCESS;
+	}
+	
+	protected ProcessStatus addRecord(Conclusion conclusion) {
+	return 	addRecord(conclusion.getConclusionType(),conclusion.getLiteral());
+//		logMessage(Level.FINE, 3, "record added: ", conclusion);
+//
+//		Literal literal = conclusion.getLiteral();
+//		Set<ConclusionType> recordList=records.get(literal);
+//		if (null==recordList){
+//			recordList=new TreeSet<ConclusionType>();
+//			records.put(literal, recordList);
+//		}
+//		recordList.add(conclusion.getConclusionType());
+//		return ProcessStatus.SUCCESS;
 	}
 
 	protected ProcessStatus removeRecord(Conclusion conclusion) {
 		Literal literal = conclusion.getLiteral();
-		Map<ConclusionType, Conclusion> recordList = records.get(literal);
-		if (null != recordList) {
+		Set<ConclusionType>recordList=records.get(literal);
+		if (null!=recordList){
 			recordList.remove(conclusion.getConclusionType());
-			if (recordList.size() == 0) records.remove(literal);
+			if (recordList.size()==0)records.remove(literal);
 		}
+//		Map<ConclusionType, Conclusion> recordList = records.get(literal);
+//		if (null != recordList) {
+//			recordList.remove(conclusion.getConclusionType());
+//			if (recordList.size() == 0) records.remove(literal);
+//		}
 		return ProcessStatus.SUCCESS;
 	}
 
 	protected boolean isRecordExist(Literal literal, ConclusionType conclusionType) {
 		if (records == null) return false;
-		Map<ConclusionType, Conclusion> recordList = records.get(literal);
+//		if (!records.containsKey(literal))return false;
+		Set<ConclusionType> recordList = records.get(literal);
+		logMessage(Level.FINEST,3,"isRecordExist(",literal,conclusionType,")=",recordList,"::",null==recordList?"null":recordList,"::",null==recordList?"":recordList.contains(conclusionType));
 		if (null == recordList) return false;
-		return recordList.containsKey(conclusionType);
+		return recordList.contains(conclusionType);
+		// Map<ConclusionType, Conclusion> recordList = records.get(literal);
+		// if (null == recordList) return false;
+		// return recordList.containsKey(conclusionType);
 	}
 
-	protected boolean isRecordExist(List<Literal> literals, ConclusionType conclusionType) {
+	protected boolean isRecordExist(Collection<Literal> literals, ConclusionType conclusionType) {
 		for (Literal literal : literals) {
 			if (isRecordExist(literal, conclusionType)) return true;
 		}
@@ -506,6 +557,169 @@ public abstract class ReasoningEngineBase extends AppModuleBase implements Reaso
 		return ProcessStatus.SUCCESS;
 	}
 
+
+
+	/**
+	 * check inference for a literal q,
+	 * <p>
+	 * for defeasible provable, check
+	 * 
+	 * <pre>
+	 *  +D q OR
+	 *  +tt q AND -D &tilde;q AND -tt &tilde;q
+	 * </pre>
+	 * 
+	 * </p>
+	 * <p>
+	 * for not defeasible provable, check
+	 * 
+	 * <pre>
+	 * -D q AND 
+	 * -tt q OR +D &tilde;q OR +tt &tilde;q
+	 * </pre>
+	 * 
+	 * where +tt and -tt are tentatively provable and not tentatively provable respectively
+	 * 
+	 * @param conclusion
+	 * @return Process status - ProcessStatus.SUCCESS, if process completed
+	 *         successfully, exception throw otherwise
+	 */
+	// @Override
+	protected ProcessStatus checkInference(Conclusion conclusion) {
+		if (conclusion == null) return ProcessStatus.SUCCESS;
+//logMessage(Level.FINEST,0,"----------------------------------\ncheckInference("+conclusion+")");
+//logMessage(Level.FINEST,1,getReasoningEngineUtilities().generateEngineInferenceStatusMessage(getClass().getName(), null, null, null, null, null, records));
+		Literal literal = conclusion.getLiteral();
+		Set<Literal> conflictLiteralList = getConflictLiterals(literal);
+		Iterator<Literal> conflictLiteralsIterator = conflictLiteralList.iterator();
+
+		boolean hasDefPosConflict = false;
+		boolean hasDefNegConflict = false;
+		
+logMessage(Level.FINER, 1, "checkInference: literal=", literal);
+		for (int i = 0; i < conflictLiteralList.size() && !(hasDefPosConflict && hasDefNegConflict); i++) {
+			Literal conflictLiteral = conflictLiteralsIterator.next();// conflictLiteralList.get(i);
+			logMessage(Level.FINER, 2, "checkInference: literal=", literal, "conflictLiteral=", conflictLiteral);
+			boolean hasLiteralComplement = theory.contains(conflictLiteral);
+
+			// for defeasibly provable
+			boolean isDefiniteProvable = isRecordExist(literal, ConclusionType.DEFINITE_PROVABLE);
+			boolean isTentativeProvable = isRecordExist(literal, ConclusionType.TENTATIVELY_PROVABLE);
+			boolean isComplementDefiniteNotProvable = isRecordExist(conflictLiteral, ConclusionType.DEFINITE_NOT_PROVABLE);
+			boolean isComplementNotTentativeProvable = isRecordExist(conflictLiteral, ConclusionType.TENTATIVELY_NOT_PROVABLE);
+
+			// for NOT defeasibly provable
+			boolean isDefiniteNotProvable = isRecordExist(literal, ConclusionType.DEFINITE_NOT_PROVABLE);
+			boolean isTentativeNotProvable = isRecordExist(literal, ConclusionType.TENTATIVELY_NOT_PROVABLE);
+			boolean isComplementDefiniteProvable = isRecordExist(conflictLiteral, ConclusionType.DEFINITE_PROVABLE);
+			boolean isComplementTentativeProvable = isRecordExist(conflictLiteral, ConclusionType.TENTATIVELY_PROVABLE);
+
+			logMessage(Level.FINEST, 3, "check inference for literal=", conclusion);
+			logMessage(Level.FINEST, 4, "complement literal check=", conflictLiteral);
+			logMessage(Level.FINEST, 5, "hasLiteralComplement=" + hasLiteralComplement);
+			logMessage(Level.FINEST, 5, "[" + isDefiniteProvable + "]", "[" + isTentativeProvable, isComplementDefiniteNotProvable,
+					isComplementNotTentativeProvable + "]");
+			logMessage(Level.FINEST, 5, "[" + isDefiniteNotProvable + "]", "[" + isTentativeNotProvable, isComplementDefiniteProvable,
+					isComplementTentativeProvable + "]");
+
+			// for defeasibly provable
+			boolean defeasibleProvableCase1 = isDefiniteProvable;
+			boolean defeasibleProvableCase2 = isTentativeProvable
+					&& (!hasLiteralComplement || (isComplementDefiniteNotProvable && isComplementNotTentativeProvable));
+			if (defeasibleProvableCase1 || defeasibleProvableCase2) {
+			} else {
+				hasDefPosConflict = true;
+				logMessage(Level.FINEST, 4, "==> hasDefPosConflict=" + hasDefPosConflict);
+			}
+
+			// for defeasibly NOT provable
+			// check inference if the literal complement exist
+			// i.e. for the literal ~q
+			// defeasible provable, check
+			// +D ~q OR
+			// +tt ~q AND -D q AND -tt q
+			// not defeasible provable, check
+			// -D ~q AND
+			// -tt ~q OR +D q OR +tt q
+			boolean defeasibleNotProvableCase1 = isDefiniteNotProvable;
+			boolean defeasibleNotProvableCase2 = isTentativeNotProvable || isComplementDefiniteProvable || isComplementTentativeProvable;
+			logMessage(Level.FINEST, 5, "[" + defeasibleNotProvableCase1 + "]", "[" + defeasibleNotProvableCase1+"]");
+			logMessage(Level.FINEST, 5, "[" + defeasibleNotProvableCase2 + "]", "[" + isTentativeNotProvable, isComplementDefiniteProvable,
+					isComplementTentativeProvable + "]");
+			if (defeasibleNotProvableCase1 && defeasibleNotProvableCase2) {
+			} else {
+				hasDefNegConflict = true;
+				logMessage(Level.FINEST, 4, "==> hasDefNegConflict=" + hasDefNegConflict);
+			}
+		}
+		if (!hasDefPosConflict) {
+			logMessage(Level.FINER, 3, "==> add new defeasibly provable literal", literal);
+			Conclusion defeasibleConclusion = new Conclusion(ConclusionType.DEFEASIBLY_PROVABLE, literal);
+			addPendingConclusion(defeasibleConclusion);
+			addRecord(defeasibleConclusion);
+			addRecord(new Conclusion(ConclusionType.TENTATIVELY_PROVABLE, literal));
+		}
+		if (!hasDefNegConflict) {
+			logMessage(Level.FINER, 3, "==> add new defeasibly NOT provable literal", literal);
+			Conclusion defeasibleNotConclusion = new Conclusion(ConclusionType.DEFEASIBLY_NOT_PROVABLE, literal);
+			addPendingConclusion(defeasibleNotConclusion);
+			addRecord(defeasibleNotConclusion);
+			addRecord(new Conclusion(ConclusionType.TENTATIVELY_NOT_PROVABLE, literal));
+		}
+		// // check inference if the literal complement exist
+		// // i.e. for the literal ~q
+		// // defeasible provable, check
+		// // +D ~q OR
+		// // +tt ~q AND -D q AND -tt q
+		// // not defeasible provable, check
+		// // -D ~q AND
+		// // -tt ~q OR +D q OR +tt q
+		// if (hasLiteralComplement) {
+		// boolean complementDefeasibleCase1 = isComplementDefiniteProvable;
+		// boolean complementDefeasibleCase2 = isComplementTentativeProvable &&
+		// isDefiniteNotProvable &&
+		// isTentativeNotProvable;
+		// if (complementDefeasibleCase1 || complementDefeasibleCase2) {
+		// if (logger != null)
+		// logger.onLogMessage("\t\t\t\t===> add new defeasibly provable literal:"
+		// +
+		// conflictLiteral);
+		// Conclusion complmementDefeasibleConclusion = new
+		// Conclusion(ConclusionType.DEFEASIBLY_PROVABLE,
+		// conflictLiteral);
+		// addPendingConclusion(complmementDefeasibleConclusion);
+		// addRecord(complmementDefeasibleConclusion);
+		// addRecord(new Conclusion(ConclusionType.TENTATIVELY_PROVABLE,
+		// conflictLiteral));
+		// isDone = true;
+		// }
+		//
+		// boolean complementDefeasibleNotProvableCase1 =
+		// isComplementDefiniteNotProvable;
+		// boolean complementDefeasibleNotProvableCase2 =
+		// isComplementNotTentativeProvable || isDefiniteProvable
+		// ||
+		// isTentativeProvable;
+		// if (complementDefeasibleNotProvableCase1 &&
+		// complementDefeasibleNotProvableCase2) {
+		// if (logger != null)
+		// logger.onLogMessage("\t\t\t\t===> add new defeasibly NOT provable literal:"
+		// +
+		// conflictLiteral);
+		// Conclusion complementDefeasibleNotConclusion = new
+		// Conclusion(ConclusionType.DEFEASIBLY_NOT_PROVABLE,
+		// conflictLiteral);
+		// addPendingConclusion(complementDefeasibleNotConclusion);
+		// addRecord(complementDefeasibleNotConclusion);
+		// addRecord(new Conclusion(ConclusionType.TENTATIVELY_NOT_PROVABLE,
+		// conflictLiteral));
+		// isDone = true;
+		// }
+		// }
+
+		return ProcessStatus.SUCCESS;
+	}
+
 	// =================================
 	// Reasoning Engine Listener - start
 	// =================================
@@ -530,9 +744,8 @@ public abstract class ReasoningEngineBase extends AppModuleBase implements Reaso
 	private void fireSetInapplicableLiteralsBeforeInference() {
 		for (AppModuleListener listener : getAppModuleListeners()) {
 			if (listener instanceof ReasoningEngineListener) {
-				((ReasoningEngineListener) listener)
-						.setInapplicableLiteralsBeforeInference((new TreeMap<ConclusionType, Set<Literal>>(
-								inapplicableLiteralsBeforeInference)));
+				((ReasoningEngineListener) listener).setInapplicableLiteralsBeforeInference((new TreeMap<ConclusionType, Set<Literal>>(
+						inapplicableLiteralsBeforeInference)));
 			}
 		}
 	}
@@ -557,8 +770,6 @@ public abstract class ReasoningEngineBase extends AppModuleBase implements Reaso
 	protected abstract void generateConclusions() throws ReasoningEngineException;
 
 	protected abstract ProcessStatus addPendingConclusion(Conclusion conclusion);
-
-	protected abstract ProcessStatus checkInference(Conclusion conclusion);
 
 	protected abstract String getProgressMessage();
 

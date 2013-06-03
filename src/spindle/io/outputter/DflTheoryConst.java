@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -29,6 +29,7 @@ import spindle.core.dom.DomConst.Literal;
  * 
  * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
  * @since version 1.0.0
+ * @version Last modified 2012.05.28
  */
 public interface DflTheoryConst {
 	String COMMENT_SYMBOL = "#";
@@ -46,6 +47,7 @@ public interface DflTheoryConst {
 
 	String SYMBOL_MODE_CONVERSION = RuleType.MODE_CONVERSION.getSymbol();
 	String SYMBOL_MODE_CONFLICT = RuleType.MODE_CONFLICT.getSymbol();
+	String SYMBOL_MODE_EXCLUSION = RuleType.MODE_EXCLUSION.getSymbol();
 
 	String SYMBOL_NEGATION = "-";
 
