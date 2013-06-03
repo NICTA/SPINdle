@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -22,6 +22,7 @@
 /**
  * Provides the classes and interfaces related to the user console.
  * 
+ * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
  * @version Last modified 2011.07.27
  * @since version 2.0.0
  */

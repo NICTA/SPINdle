@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
@@ -53,7 +55,7 @@ import spindle.core.dom.Literal;
 import spindle.core.dom.Theory;
 import spindle.core.dom.TheoryException;
 import spindle.io.parser.DflTheoryParser2;
-import spindle.io.parser.XmlTheoryParser;
+import spindle.io.parser.XmlTheoryParser2;
 import spindle.sys.AppConst;
 import spindle.sys.AppLogger;
 import spindle.sys.Conf;
@@ -63,6 +65,7 @@ import spindle.sys.message.ErrorMessage;
 import com.app.utils.ClassList;
 import com.app.utils.FileManager;
 import com.app.utils.ResourcesUtils;
+import com.app.utils.Utilities;
 import com.app.utils.Utilities.ProcessStatus;
 
 /**
@@ -83,7 +86,7 @@ public final class IOManager {
 
 	private static Map<String, TheoryParser> parsers = null;
 	private static Map<String, TheoryOutputter> outputters = null;
-	
+
 	static {
 		try {
 			interfaceFilter.add(TheoryParser.class.getName());
@@ -129,8 +132,8 @@ public final class IOManager {
 		return classList.findClass(interfaceFilter, null, null);
 	}
 
-	private synchronized static Map<String, Set<String>> getIOclassesFromConfigFile() throws ClassNotFoundException, IOException, ParserConfigurationException,
-			SAXException {
+	private synchronized static Map<String, Set<String>> getIOclassesFromConfigFile() throws ClassNotFoundException, IOException,
+			ParserConfigurationException, SAXException {
 		InputStream ins = null;
 		try {
 			ins = ResourcesUtils.getResourceAsStream(AppConst.IO_CONF_FILE);
@@ -176,8 +179,9 @@ public final class IOManager {
 					for (String parserName : entry.getValue()) {
 						try {
 							printMessage(2, "generating parser [" + parserName + "]", false);
-							Class<?> clazz = Class.forName(parserName);
-							TheoryParser parser = clazz.asSubclass(TheoryParser.class).newInstance();
+							TheoryParser parser = Utilities.getInstance(parserName, TheoryParser.class);
+							// Class<?> clazz = Class.forName(parserName);
+							// TheoryParser parser = clazz.asSubclass(TheoryParser.class).newInstance();
 							printMessage("...success, type=[" + parser.getParserType() + "]");
 							parsers.put(parser.getParserType(), parser);
 						} catch (Exception e) {
@@ -189,8 +193,9 @@ public final class IOManager {
 					for (String outputterName : entry.getValue()) {
 						try {
 							printMessage(2, "generating outputter [" + outputterName + "]", false);
-							Class<?> clazz = Class.forName(outputterName);
-							TheoryOutputter outputter = clazz.asSubclass(TheoryOutputter.class).newInstance();
+							TheoryOutputter outputter = Utilities.getInstance(outputterName, TheoryOutputter.class);
+							// Class<?> clazz = Class.forName(outputterName);
+							// TheoryOutputter outputter = clazz.asSubclass(TheoryOutputter.class).newInstance();
 							printMessage("...success, type=[" + outputter.getOutputterType() + "]");
 							outputters.put(outputter.getOutputterType(), outputter);
 						} catch (Exception e) {
@@ -211,6 +216,14 @@ public final class IOManager {
 		return configurationTimeUsed;
 	}
 
+	public static final Theory getTheory(final URI uri, final AppLogger logger) throws ParserException, MalformedURLException {
+		try {
+			return getTheory(uri.toURL(), logger);
+		} catch (IOException e) {
+			throw new ParserException(e);
+		}
+	}
+
 	public static final Theory getTheory(final URL url, final AppLogger logger) throws ParserException, IOException {
 		String filename = url.getFile();
 		try {
@@ -222,7 +235,7 @@ public final class IOManager {
 				String contentType = urlc.getContentType();
 				if (null != contentType) {
 					contentType = contentType.toLowerCase();
-					if (contentType.indexOf(XmlTheoryParser.PARSER_TYPE) >= 0) parserType = XmlTheoryParser.PARSER_TYPE;
+					if (contentType.indexOf(XmlTheoryParser2.PARSER_TYPE) >= 0) parserType = XmlTheoryParser2.PARSER_TYPE;
 					else if (contentType.indexOf(DflTheoryParser2.PARSER_TYPE) >= 0) parserType = DflTheoryParser2.PARSER_TYPE;
 				}
 				// set the default parserType to xml if no theory type info can
@@ -272,7 +285,8 @@ public final class IOManager {
 		}
 	}
 
-	public static final Map<Literal, Map<ConclusionType, Conclusion>> getConclusions(final URL url, final AppLogger logger) throws ParserException, IOException {
+	public static final Map<Literal, Map<ConclusionType, Conclusion>> getConclusions(final URL url, final AppLogger logger)
+			throws ParserException, IOException {
 		String filename = url.getFile();
 		try {
 			URLConnection urlc = url.openConnection();
@@ -283,12 +297,12 @@ public final class IOManager {
 				String contentType = urlc.getContentType();
 				if (null != contentType) {
 					contentType = contentType.toLowerCase();
-					if (contentType.indexOf(XmlTheoryParser.PARSER_TYPE) >= 0) parserType = XmlTheoryParser.PARSER_TYPE;
+					if (contentType.indexOf(XmlTheoryParser2.PARSER_TYPE) >= 0) parserType = XmlTheoryParser2.PARSER_TYPE;
 					else if (contentType.indexOf(DflTheoryParser2.PARSER_TYPE) >= 0) parserType = DflTheoryParser2.PARSER_TYPE;
 				}
 				// set the default parserType to xml if no theory type info can
 				// be found
-				if ("".equals(parserType)) parserType = XmlTheoryParser.PARSER_TYPE;
+				if ("".equals(parserType)) parserType = XmlTheoryParser2.PARSER_TYPE;
 			}
 			return getConclusions(urlc.getInputStream(), getParser(parserType), logger);
 		} catch (ParserException e) {
