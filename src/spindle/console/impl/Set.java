@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -62,18 +62,20 @@ public class Set extends CommandBase {
 	;
 	public static final String USAGE = "set [property name]=[property value]";
 
-	public static final java.util.Set<String> properties = new TreeSet<String>();
-	static {
-		properties.add(ConfTag.IS_SHOW_PROGRESS);
-		properties.add(ConfTag.IS_SHOW_RESULT);
-		properties.add(ConfTag.IS_SAVE_RESULT);
-		properties.add(ConfTag.LOG_FOLDER);
-		properties.add(ConfTag.LOG_LEVEL);
-		properties.add(ConfTag.REASONER_VERSION);
-		properties.add(ConfTag.IS_LOG_INFERENCE_PROCESS);
-		properties.add(ConfTag.REASONER_AMBIGUOUS_PROPAGATION);
-		properties.add(ConfTag.REASONER_WELL_FOUNDED_SEMANTICS);
-	}
+	public static final java.util.Set<String> properties = new TreeSet<String>() {
+		private static final long serialVersionUID = 1L;
+		{
+			add(ConfTag.IS_SHOW_PROGRESS);
+			add(ConfTag.IS_SHOW_RESULT);
+			add(ConfTag.IS_SAVE_RESULT);
+			add(ConfTag.LOG_FOLDER);
+			add(ConfTag.LOG_LEVEL);
+			add(ConfTag.REASONER_VERSION);
+			add(ConfTag.IS_LOG_INFERENCE_PROCESS);
+			add(ConfTag.REASONER_AMBIGUOUS_PROPAGATION);
+			add(ConfTag.REASONER_WELL_FOUNDED_SEMANTICS);
+		}
+	};
 
 	public Set() {
 		super(COMMAND_NAME, DESCRIPTION, USAGE);
@@ -105,10 +107,9 @@ public class Set extends CommandBase {
 		return execute(theory, conclusions, args);
 	}
 
-	private String setProperty(final String propertyName, final String propertyValue) throws ConfigurationException,
-			ConsoleException {
-		if (!properties.contains(propertyName)) throw new UnrecognizedCommandException(COMMAND_NAME + ", property ["
-				+ propertyName + "] not found");
+	private String setProperty(final String propertyName, final String propertyValue) throws ConfigurationException, ConsoleException {
+		if (!properties.contains(propertyName))
+			throw new UnrecognizedCommandException(COMMAND_NAME + ", property [" + propertyName + "] not found");
 		if (ConfTag.LOG_LEVEL.equals(propertyName)) {
 			try {
 				Level level = Level.parse(propertyValue);
