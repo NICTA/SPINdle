@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -30,7 +30,7 @@ import spindle.core.SpindleException;
  * @since 2011.07.26
  * @since version 2.1.0
  * @version Last modified 2012.08.06
- * @deprecated As of version 2.1.0, the DFL theory parser class {@link spindle.io.parser.DflTheoryParser} will be replaced by
+ * @deprecated As of version 2.1.0, the DFL theory parser class {@link spindle.io.parser.DflTheoryParser} is replaced by
  *             {@link spindle.io.parser.DflTheoryParser2}. The component mismatch exception class will no longer be used
  *             anymore.
  */

@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -40,7 +40,7 @@ import spindle.engine.TheoryNormalizerException;
 import spindle.io.IOManager;
 import spindle.io.ParserException;
 import spindle.io.parser.DflTheoryParser2;
-import spindle.io.parser.XmlTheoryParser;
+import spindle.io.parser.XmlTheoryParser2;
 import spindle.sys.Conf;
 import spindle.sys.Messages;
 import spindle.sys.message.ErrorMessage;
@@ -132,7 +132,7 @@ public class Reasoner extends ReasonerBase {
 		setAppLogger(Conf.getLogger("XML_STRING_" + Utilities.getRandomString(10)));
 
 		try {
-			Theory theory = XmlTheoryParser.getTheory(xmlString, this);
+			Theory theory = XmlTheoryParser2.getTheory(xmlString, this);
 			loadTheory(theory);
 		} catch (Exception e) {
 			onLogMessage(Level.SEVERE, "ParserException: ", e);
