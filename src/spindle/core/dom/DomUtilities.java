@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -21,6 +21,8 @@
  */
 package spindle.core.dom;
 
+import java.util.Comparator;
+
 import spindle.sys.Conf;
 
 /**
@@ -33,6 +35,15 @@ import spindle.sys.Conf;
  * @version Last modified 2012.07.30
  */
 public class DomUtilities {
+	private static final Temporal PERSISTENT_TEMPORAL = new Temporal();
+	private static final Temporal MINIMUM_TEMPORAL_INSTANCE = new Temporal(Long.MIN_VALUE, Long.MIN_VALUE);
+
+	private static final Comparator<? super Literal> LITERAL_COMPARATOR = new LiteralComparator(true);
+	private static final Comparator<? super Literal> PLAIN_LITERAL_COMPARATOR = new LiteralComparator(false);
+	private static final Comparator<? super Literal> LITERAL_TEMPORAL_START_COMPARATOR = new LiteralComparator(true,
+			new TemporalStartComparator());
+	private static final Comparator<? super Temporal> TEMPORAL_COMPARATOR = new TemporalComparator();
+	private static final Comparator<? super Temporal> TEMPORAL_START_COMPARATOR = new TemporalStartComparator();
 
 	private static AppConstants appConstants = AppConstants.getInstance(null);
 
@@ -65,7 +76,8 @@ public class DomUtilities {
 
 	private static LiteralVariable validateLiteralVariable(LiteralVariable literalVariable) {
 		try {
-			return (appConstants.isAppConstant(literalVariable)) ? appConstants.getAppConstantAsLiteralVariable(literalVariable) : literalVariable;
+			return (appConstants.isAppConstant(literalVariable)) ? appConstants.getAppConstantAsLiteralVariable(literalVariable)
+					: literalVariable;
 		} catch (Exception e) {
 			return literalVariable;
 		}
@@ -76,12 +88,28 @@ public class DomUtilities {
 	}
 
 	public static Literal getLiteral(final String name, final boolean isNegation) {
-		return getLiteral(name, isNegation, null, null, null,false);
+		return getLiteral(name, isNegation, null, null, null, false);
 	}
 
 	public static Literal getLiteral(final String name, final boolean isNegation,//
 			final String modeName, final boolean isModeNegation) {
-		return getLiteral(name, isNegation, modeName, isModeNegation, null,null,false);
+		return getLiteral(name, isNegation, modeName, isModeNegation, null, null, false);
+	}
+
+	public static Literal getLiteral(final String name, final boolean isNegation,//
+			final Temporal temporal) {
+		return getLiteral(name, isNegation, null, temporal, null, false);
+		// final long startTime, final long endTime) {
+		// return getLiteral(name, isNegation, null, new Temporal(startTime, endTime), null, false);
+	}
+
+	public static Literal getLiteral(final String name, final boolean isNegation,//
+			final String modeName, final boolean isModeNegation, //
+			// final long startTime, final long endTime,
+			final Temporal temporal) {
+		return getLiteral(name, isNegation, null == modeName ? null : new Mode(modeName, isModeNegation), //
+				temporal, null, false);
+		// new Temporal(startTime, endTime), null, false);
 	}
 
 	public static Literal getLiteral(final String name, final boolean isNegation,//
@@ -89,13 +117,12 @@ public class DomUtilities {
 			final Temporal temporal, //
 			final String[] predicates) {
 		Mode mode = null == modeName ? null : new Mode(modeName, isModeNegation);
-		return getLiteral(name, isNegation, mode,temporal, predicates, false);
+		return getLiteral(name, isNegation, mode, temporal, predicates, false);
 	}
 
 	public static Literal getLiteral(final String name, final boolean isNegation, //
 			final String modeName, final boolean isModeNegation,//
-			final Temporal temporal,
-			final String[] predicates, //
+			final Temporal temporal, final String[] predicates, //
 			final boolean isPlaceHolder) {
 		Mode mode = null == modeName ? null : new Mode(modeName, isModeNegation);
 		return getLiteral(name, isNegation, mode, temporal, predicates, isPlaceHolder);
@@ -103,10 +130,9 @@ public class DomUtilities {
 
 	public static Literal getLiteral(final String name, final boolean isNegation, //
 			final Mode mode,//
-			final Temporal temporal,
-			final String[] predicates, //
+			final Temporal temporal, final String[] predicates, //
 			final boolean isPlaceHolder) {
-		return new Literal(name, isNegation, mode,temporal, predicates, isPlaceHolder);
+		return new Literal(name, isNegation, mode, temporal, predicates, isPlaceHolder);
 	}
 
 	public static Literal getLiteral(Literal literal) {
@@ -122,4 +148,35 @@ public class DomUtilities {
 		}
 	}
 
+	public static Temporal getTemporalInstance(long t) {
+		return Temporal.getTemporalInstance(t);
+	}
+
+	public static Temporal getPersistentTemporal() {
+		return PERSISTENT_TEMPORAL;
+	}
+
+	public static Temporal getMinimumTemporalInstance() {
+		return MINIMUM_TEMPORAL_INSTANCE;
+	}
+
+	public static Comparator<? super Literal> getLiteralComparator() {
+		return LITERAL_COMPARATOR;
+	}
+
+	public static Comparator<? super Literal> getPlainLiteralComparator() {
+		return PLAIN_LITERAL_COMPARATOR;
+	}
+
+	public static Comparator<? super Literal> getLiteralTemporalStartComparator() {
+		return LITERAL_TEMPORAL_START_COMPARATOR;
+	}
+
+	public static Comparator<? super Temporal> getTemporalComparator() {
+		return TEMPORAL_COMPARATOR;
+	}
+
+	public static Comparator<? super Temporal> getTemporalStartComparator() {
+		return TEMPORAL_START_COMPARATOR;
+	}
 }

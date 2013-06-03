@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.0)
+ * SPINdle (version 2.2.2)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -46,19 +46,21 @@ public interface ConfTag {
 	String REASONER_CONCLUSION_DEFAULT_EXTENSION = "reasoner.conclusion.defaultExt";
 	String REASONER_VERSION = "reasoner.version";
 	String REASONER_LOG_FILE_PREFIX = "reasoner.log.filename.prefix";
-	String IS_GARBAGE_COLLECTION="reasoner.garbage.collection";
+	String IS_GARBAGE_COLLECTION = "reasoner.garbage.collection";
 	String REASONER_GARBAGE_COLLECTION_TIME_INTERVAL = "reasoner.garbage.collection.timeInterval";
 	String IS_MULTI_THREAD_MODE = "reasoner.multiThreadMode";
 
-
 	String IS_SEARCH_IO_CLASSES = "app.io.searchClasses";
 	String IS_SHOW_STATISTICS = "app.showStatistics";
-	
-	String IS_LOG_INFERENCE_PROCESS="reasoner.logInference";
+
+	String IS_LOG_INFERENCE_PROCESS = "reasoner.logInference";
 
 	String REASONER_WELL_FOUNDED_SEMANTICS = "reasoner.wellFoundedSemantics";
 	String REASONER_AMBIGUOUS_PROPAGATION = "reasoner.ambiguityPropagation";
+	String REASONER_CONTINUES_WITH_MIXED_TEMPORAL_LITERAL="reasoner.mixLiteralsMode";
 
+	String REASONER_TDL_CONCLUSION_UPDATER="reasoner.tdl.conclusionUpdater";
+	
 	String THEORY_ANALYSER_STRONGLY_COMPONENT_IMPL = "theoryAnalyser.scc.impl";
 
 	String THEORY_VARIABLE_BOOLEAN_EVALUATOR_ENGINE_NAME = "theoryEvaluator.scriptEngineName";
