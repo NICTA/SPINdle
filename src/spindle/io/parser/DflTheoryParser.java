@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -32,9 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.app.utils.NameValuePair;
-
-//import com.app.utils.Entry;
+import com.app.utils.Entry;
 
 import spindle.core.dom.Conclusion;
 import spindle.core.dom.ConclusionType;
@@ -59,10 +57,9 @@ import spindle.sys.message.ErrorMessage;
  * Defeasible theory and conclusions parser for theory represented using DFL language.
  * 
  * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
- * @version Last modified 2012.09.24
- * @version 2011.07.27
+ * @version Last modified 2011.07.27
  * @since version 1.0.0
- * @deprecated As of version 2.1.0, the DFL theory parser class {@link spindle.io.parser.DflTheoryParser} is replaced by {@link spindle.io.parser.DflTheoryParser2}.
+ * @deprecated As of version 2.1.0, the DFL theory parser class {@link spindle.io.parser.DflTheoryParser} will be replaced by {@link spindle.io.parser.DflTheoryParser2}.
  * @see spindle.io.parser.DflTheoryParser2
  */
 @Deprecated
@@ -241,7 +238,6 @@ public class DflTheoryParser extends AbstractTheoryParser {
 			case MODE_CONFLICT:
 				extractModeConversionAndModeRuleConflict(str);
 				break;
-			default:
 			}
 		} catch (ParserException e) {
 			throw e;
@@ -327,7 +323,7 @@ public class DflTheoryParser extends AbstractTheoryParser {
 			literalStr = literalList.get(0);
 		} else literalStr = str.trim();
 
-		NameValuePair<String, String> theoryBooleanFunctionEntry = extractLiteralStringComponent(literalStr, DflTheoryConst.LITERAL_BOOLEAN_FUNCTION_PREFIX,
+		Entry<String, String> theoryBooleanFunctionEntry = extractLiteralStringComponent(literalStr, DflTheoryConst.LITERAL_BOOLEAN_FUNCTION_PREFIX,
 				DflTheoryConst.LITERAL_BOOLEAN_FUNCTION_POSTFIX, //
 				true);
 
@@ -336,13 +332,13 @@ public class DflTheoryParser extends AbstractTheoryParser {
 
 		literalStr = theoryBooleanFunctionEntry.getValue();
 
-		NameValuePair<String, String> modeEntry = extractLiteralStringComponent(literalStr, //
+		Entry<String, String> modeEntry = extractLiteralStringComponent(literalStr, //
 				DflTheoryConst.MODE_START, DflTheoryConst.MODE_END, true);
 		modeName = modeEntry.getKey();
-		NameValuePair<String, String> predicateEntry = extractLiteralStringComponent(modeEntry.getValue(), //
+		Entry<String, String> predicateEntry = extractLiteralStringComponent(modeEntry.getValue(), //
 				DflTheoryConst.PREDICATE_START, DflTheoryConst.PREDICATE_END, !containsAbstractLiteralInPredicate);
 		predicates = predicateEntry.getKey();
-		NameValuePair<String, String> temporalEntry = extractLiteralStringComponent(predicateEntry.getValue(), //
+		Entry<String, String> temporalEntry = extractLiteralStringComponent(predicateEntry.getValue(), //
 				DflTheoryConst.TIMESTAMP_START, DflTheoryConst.TIMESTAMP_END, true);
 
 		@SuppressWarnings("unused")
@@ -378,13 +374,13 @@ public class DflTheoryParser extends AbstractTheoryParser {
 		return literal;
 	}
 
-	private NameValuePair<String, String> extractLiteralStringComponent(final String literalStr, final char prefix, final char postfix, boolean verifyContent)
+	private Entry<String, String> extractLiteralStringComponent(final String literalStr, final char prefix, final char postfix, boolean verifyContent)
 			throws ParserException {
-		if (null == literalStr || "".equals(literalStr.trim())) return new NameValuePair<String, String>("", "");
+		if (null == literalStr || "".equals(literalStr.trim())) return new Entry<String, String>("", "");
 		int locStart = literalStr.indexOf(prefix);
 		int locEnd = literalStr.lastIndexOf(postfix);
 
-		if (locStart < 0 && locEnd < 0) return new NameValuePair<String, String>("", literalStr);
+		if (locStart < 0 && locEnd < 0) return new Entry<String, String>("", literalStr);
 		if (locStart < 0 || locEnd < 0) throw new ParserException(ErrorMessage.LITERAL_STRING_INCORRECT_FORMAT, literalStr);
 
 		String residual = literalStr.substring(0, locStart) + literalStr.substring(locEnd + 1);
@@ -393,7 +389,7 @@ public class DflTheoryParser extends AbstractTheoryParser {
 		if (verifyContent && (content.indexOf(prefix) >= 0 || residual.indexOf(postfix) >= 0)) throw new ParserException(
 				ErrorMessage.LITERAL_STRING_INCORRECT_FORMAT, new Object[] { literalStr });
 
-		NameValuePair<String, String> entry = new NameValuePair<String, String>(content, residual);
+		Entry<String, String> entry = new Entry<String, String>(content, residual);
 
 		return entry;
 	}

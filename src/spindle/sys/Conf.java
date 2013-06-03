@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -246,16 +246,6 @@ public class Conf {
 		props.setProperty(ConfTag.REASONER_AMBIGUOUS_PROPAGATION, Boolean.toString(reasoningWithAmbiguityPropagation));
 	}
 
-	public static boolean isReasoningWithMixedTemporalLiterals() {
-		if (!isInitialized) initializeApplicationContext(null);
-		return props.getPropertyAsBoolean(ConfTag.REASONER_CONTINUES_WITH_MIXED_TEMPORAL_LITERAL);
-	}
-
-	public static void setReasoningWithMixedTemporalLiterals(boolean reasoningWithMixedTemporalLiterals) {
-		if (!isInitialized) initializeApplicationContext(null);
-		props.setProperty(ConfTag.REASONER_CONTINUES_WITH_MIXED_TEMPORAL_LITERAL, Boolean.toString(reasoningWithMixedTemporalLiterals));
-	}
-
 	public static boolean isLogInferenceProcess() {
 		if (!isInitialized) initializeApplicationContext(null);
 		return props.getPropertyAsBoolean(ConfTag.IS_LOG_INFERENCE_PROCESS);
@@ -274,11 +264,6 @@ public class Conf {
 	public static void setReasoningWithWellFoundedSemantics(final boolean reasoningWithWellFoundedSemantics) {
 		if (!isInitialized) initializeApplicationContext(null);
 		props.setProperty(ConfTag.REASONER_WELL_FOUNDED_SEMANTICS, Boolean.toString(reasoningWithWellFoundedSemantics));
-	}
-
-	public static String getTdlConclusionUpdaterClassName() {
-		if (!isInitialized) initializeApplicationContext(null);
-		return props.getProperty(ConfTag.REASONER_TDL_CONCLUSION_UPDATER);
 	}
 
 	public static String getTheoryAnalyser_stronglyConnectedComponentClassName() {
@@ -397,10 +382,11 @@ public class Conf {
 		File f = new File(filename);
 		String logFilename = f.getName();
 		String fileExtension = FileManager.getFileExtension(logFilename);
-		if (!"".equals(fileExtension)) logFilename = logFilename.substring(0, logFilename.length() - fileExtension.length() - 1);
+		if (!"".equals(fileExtension)) logFilename = logFilename.substring(0,
+				logFilename.length() - fileExtension.length() - 1);
 
-		String modifiedLogFilename = getLogFilePrefix() + "[" + logFilename + "]" + DateTime.getCurrentTimeAsFileTimestamp()
-				+ getLogFileExtension();
+		String modifiedLogFilename = getLogFilePrefix() + "[" + logFilename + "]"
+				+ DateTime.getCurrentTimeAsFileTimestamp() + getLogFileExtension();
 		File logFile = new File(getLogFolder(), modifiedLogFilename);
 
 		AppLogger logger = new AppLoggerImpl(logFile);
@@ -417,7 +403,8 @@ public class Conf {
 	}
 
 	public static void addNewProperty(String propertyName, String propertyValue) throws ConfigurationException {
-		if (null == propertyName || "".equals(propertyName.trim())) throw new ConfigurationException("property name is null");
+		if (null == propertyName || "".equals(propertyName.trim())) throw new ConfigurationException(
+				"property name is null");
 		String value = (null == propertyValue) ? "" : propertyValue;
 		props.setProperty(propertyName.trim(), value);
 	}
@@ -426,9 +413,9 @@ public class Conf {
 		Map<String, String> modifiedProperties = new TreeMap<String, String>();
 		if (null == updatedProperties || updatedProperties.size() == 0) return modifiedProperties;
 		for (Entry<E, E> entry : updatedProperties) {
-			String key = entry.getKey().toString().trim();
+			String key = entry.getKey().toString().trim();			
 			if (!props.containsKey(key)) continue;
-
+			
 			String value = null == entry.getValue() ? "" : entry.getValue().toString().trim();
 			if ("".equals(value) && DEFAULT_ARGUMENT_VALUE_CHANGE.containsKey(key)) {
 				value = DEFAULT_ARGUMENT_VALUE_CHANGE.get(key);
@@ -450,9 +437,11 @@ public class Conf {
 			if (null != args) modifiedProperties.putAll(updateProperties(args.entrySet()));
 			if (modifiedProperties.size() > 0) {
 				for (Entry<String, String> entry : modifiedProperties.entrySet()) {
-					System.out.println(AppConst.IDENTATOR + AppConst.IDENTATOR + entry.getKey() + "=" + entry.getValue());
+					System.out.println(AppConst.IDENTATOR + AppConst.IDENTATOR + entry.getKey() + "="
+							+ entry.getValue());
 				}
 			}
+			
 
 			setReasonerVersion(props.getProperty(ConfTag.REASONER_VERSION));
 

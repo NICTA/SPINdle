@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -86,8 +86,7 @@ public class SdlReasoningEngineAP extends SdlReasoningEngine {
 		logMessage(Level.FINER, 1, "=== +ve set - start ===");
 		Set<String> rulesToRemove = new TreeSet<String>();
 		// Set<Conclusion> tempPosConclusionSet = new TreeSet<Conclusion>();
-		Map<Conclusion, Set<String>> tempPosDefiniteConclusionSet = new TreeMap<Conclusion, Set<String>>();
-		Map<Conclusion, Set<String>> tempPosDefeasibleConclusionSet = new TreeMap<Conclusion, Set<String>>();
+		Map<Conclusion, Set<String>> tempPosConclusionSet = new TreeMap<Conclusion, Set<String>>();
 		Set<String> ruleSet = null;
 
 		for (Rule rule : theory.getFactsAndAllRules().values()) {
@@ -98,10 +97,10 @@ public class SdlReasoningEngineAP extends SdlReasoningEngine {
 					Conclusion conclusion = new Conclusion(ConclusionType.DEFINITE_PROVABLE, literal);
 					addRecord(conclusion);
 
-					ruleSet = tempPosDefiniteConclusionSet.get(conclusion);
+					ruleSet = tempPosConclusionSet.get(conclusion);
 					if (null == ruleSet) {
 						ruleSet = new TreeSet<String>();
-						tempPosDefiniteConclusionSet.put(conclusion, ruleSet);
+						tempPosConclusionSet.put(conclusion, ruleSet);
 					}
 					ruleSet.add(rule.getOriginalLabel());
 
@@ -115,10 +114,10 @@ public class SdlReasoningEngineAP extends SdlReasoningEngine {
 					Conclusion conclusion = new Conclusion(ConclusionType.DEFEASIBLY_PROVABLE, literal);
 					addRecord(conclusion);
 
-					ruleSet = tempPosDefeasibleConclusionSet.get(conclusion);
+					ruleSet = tempPosConclusionSet.get(conclusion);
 					if (null == ruleSet) {
 						ruleSet = new TreeSet<String>();
-						tempPosDefeasibleConclusionSet.put(conclusion, ruleSet);
+						tempPosConclusionSet.put(conclusion, ruleSet);
 					}
 					ruleSet.add(rule.getOriginalLabel());
 
@@ -132,25 +131,23 @@ public class SdlReasoningEngineAP extends SdlReasoningEngine {
 		}
 
 		removeRules(rulesToRemove);
-		if (!AppConst.isDeploy){ printPendingConclusionSet(unprovedStrictRuleLiterals, unprovedDefeasibleRuleLiterals,
-				tempPosDefiniteConclusionSet.keySet(),tempPosDefeasibleConclusionSet.keySet());
-		}
+		if (!AppConst.isDeploy) printPendingConclusionSet(unprovedStrictRuleLiterals, unprovedDefeasibleRuleLiterals,//
+				tempPosConclusionSet.keySet());
 
 		// for (Conclusion conclusion : tempPosConclusionSet) {
-		TreeSet<Literal> tempPosDefiniteConclusions = extractLiteralsFromConclusions(tempPosDefiniteConclusionSet.keySet());
-		TreeSet<Literal> tempPosDefeasibleConclusions = extractLiteralsFromConclusions(tempPosDefeasibleConclusionSet.keySet());
-		
-		for (Entry<Conclusion, Set<String>> entry : tempPosDefiniteConclusionSet.entrySet()) {
+		Set<Conclusion> tempPosConclusions = tempPosConclusionSet.keySet();
+		for (Entry<Conclusion, Set<String>> entry : tempPosConclusionSet.entrySet()) {
 			Conclusion conclusion = entry.getKey();
 			Set<String> ruleLabels = entry.getValue();
 
 			boolean ambiguousExist = false, pos = true;
 			Literal literal = conclusion.getLiteral();
-			Set<Literal> conflictLiterals = getConflictLiterals(literal);
+			List<Literal> conflictLiterals = getConflictLiterals(literal);
 
-//			switch (conclusion.getConclusionType()) {
-	//		case DEFINITE_PROVABLE:
-				ambiguousExist = isTempConclusionExist(conflictLiterals, tempPosDefiniteConclusions);//,ConclusionType.DEFINITE_PROVABLE);
+			switch (conclusion.getConclusionType()) {
+			case DEFINITE_PROVABLE:
+				ambiguousExist = isTempConclusionExist(conflictLiterals, tempPosConclusions,
+						ConclusionType.DEFINITE_PROVABLE);
 				// ambiguousExist = isTempConclusionExist(conflictLiterals, tempPosConclusionSet,
 				// ConclusionType.DEFINITE_PROVABLE);
 				if (!ambiguousExist) ambiguousExist = containsUnprovedRuleInTheory(conflictLiterals, RuleType.STRICT);
@@ -173,21 +170,13 @@ public class SdlReasoningEngineAP extends SdlReasoningEngine {
 					}
 				}
 				break;
-			}
-				for (Entry<Conclusion, Set<String>> entry : tempPosDefeasibleConclusionSet.entrySet()) {
-					Conclusion conclusion = entry.getKey();
-					Set<String> ruleLabels = entry.getValue();
-
-					boolean ambiguousExist = false, pos = true;
-					Literal literal = conclusion.getLiteral();
-					Set<Literal> conflictLiterals = getConflictLiterals(literal);
-
-			//case DEFEASIBLY_PROVABLE:
+			case DEFEASIBLY_PROVABLE:
 				// -- for AP - start
 				addRecord(new Conclusion(ConclusionType.POSITIVELY_SUPPORT, conclusion.getLiteral()));
 				// -- for AP - end
 
-				ambiguousExist = isTempConclusionExist(conflictLiterals, tempPosDefeasibleConclusions);//,ConclusionType.DEFEASIBLY_PROVABLE);
+				ambiguousExist = isTempConclusionExist(conflictLiterals, tempPosConclusions,
+						ConclusionType.DEFEASIBLY_PROVABLE);
 				// ambiguousExist = isTempConclusionExist(conflictLiterals, tempPosConclusionSet,
 				// ConclusionType.DEFEASIBLY_PROVABLE);
 				if (!ambiguousExist) ambiguousExist = containsUnprovedRuleInTheory(conflictLiterals,
@@ -213,9 +202,9 @@ public class SdlReasoningEngineAP extends SdlReasoningEngine {
 						newLiteralFind_defeasiblyNotProvable(literal, false);
 					}
 				}
-			//	break;
-			//default:
-		//	}
+				break;
+			default:
+			}
 		}
 		logMessage(Level.FINER, 1, "=== +ve set - end ===");
 
@@ -290,7 +279,7 @@ public class SdlReasoningEngineAP extends SdlReasoningEngine {
 			Set<String> ruleLabels = entry.getValue();
 
 			Literal literal = conclusion.getLiteral();
-			Set<Literal> conflictLiterals = getConflictLiterals(literal);
+			List<Literal> conflictLiterals = getConflictLiterals(literal);
 			switch (conclusion.getConclusionType()) {
 			case DEFINITE_PROVABLE: // same as ambiguity blocking
 				logMessage(Level.FINER, 1, "updateAmbiguousConclusion, check literal (definite): ", literal);
@@ -384,7 +373,7 @@ public class SdlReasoningEngineAP extends SdlReasoningEngine {
 			logMessage(Level.FINER, 1, null, literal, ": rule=", rule, ", is empty body=" + rule.isEmptyBody());
 			if (rule.isEmptyBody()) {
 				Literal headLiteral = rule.getHeadLiterals().get(0);
-				Set<Literal> conflictLiterals = null;
+				List<Literal> conflictLiterals = null;
 				rulesToDelete.add(rule.getLabel());
 				switch (rule.getRuleType()) {
 				case STRICT:
@@ -500,7 +489,7 @@ public class SdlReasoningEngineAP extends SdlReasoningEngine {
 				addRecord(new Conclusion(ConclusionType.POSITIVELY_SUPPORT, headLiteral));
 				// ambiguity propagation - end
 				rulesToRemove.add(rule.getLabel());
-				Set<Literal> conflictLiterals = getConflictLiterals(headLiteral);
+				List<Literal> conflictLiterals = getConflictLiterals(headLiteral);
 				if (containsUnprovedRuleInTheory(conflictLiterals, RuleType.DEFEASIBLE)) {
 					logMessage(Level.FINEST, 2, "==> generateConclusions_defeasiblyProvable: ==> add ambiguous (+d)",
 							headLiteral);
@@ -597,7 +586,7 @@ public class SdlReasoningEngineAP extends SdlReasoningEngine {
 				// literal still provable by other strict rules, so do nothing
 				logMessage(Level.FINEST, 2, "literal [", inapplicableLiteral, "] is provable by other defesible rules");
 			} else {
-				Set<Literal> conflictLiterals = getConflictLiterals(inapplicableLiteral);
+				List<Literal> conflictLiterals = getConflictLiterals(inapplicableLiteral);
 				boolean acChk1 = isAmbiguousConclusionExist(conflictLiterals, ConclusionType.DEFEASIBLY_PROVABLE);
 				boolean acChk2 = isAmbiguousConclusionExist(inapplicableLiteral, ConclusionType.DEFEASIBLY_NOT_PROVABLE);
 				boolean recChk1 = isRecordExist(conflictLiterals, ConclusionType.DEFEASIBLY_PROVABLE);

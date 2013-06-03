@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -78,14 +78,14 @@ public class ReasonerUtilities {
 	}
 
 	private static String getApplicationTitle() {
-		if (null == APPLICATION_TITLE) APPLICATION_TITLE = AppConst.APP_TITLE + " (version " + AppConst.APP_VERSION + ")";
+		if (null == APPLICATION_TITLE) APPLICATION_TITLE = AppConst.APP_TITLE + " (version " + AppConst.APP_VERSION
+				+ ")";
 		return APPLICATION_TITLE;
 	}
 
 	public static String getAppStartMessage() {
-		if (null == APPLICATION_START_MESSAGE)
-			APPLICATION_START_MESSAGE = TextUtilities.generateHighLightedMessage(getApplicationTitle() + LINE_SEPARATOR
-					+ AppConst.APP_COPYRIGHT_MESSAGE);
+		if (null == APPLICATION_START_MESSAGE) APPLICATION_START_MESSAGE = TextUtilities
+				.generateHighLightedMessage(getApplicationTitle() + LINE_SEPARATOR + AppConst.APP_COPYRIGHT_MESSAGE);
 		return APPLICATION_START_MESSAGE;
 	}
 
@@ -124,13 +124,7 @@ public class ReasonerUtilities {
 		if (null == PERFORMANCE_STATISTICS_HEADER_LINE) {
 			StringBuilder sb = new StringBuilder();
 			sb.append(LINE_SEPARATOR).append("+------------+------------");
-			switch (Conf.getReasonerVersion()) {
-			case 1:
-				sb.append(TextUtilities.repeatStringPattern("+-----------------", 6));
-				break;
-			default:
-				sb.append(TextUtilities.repeatStringPattern("+-----------------", 5));
-			}
+			sb.append(TextUtilities.repeatStringPattern("+-----------------", 6));
 			sb.append("+-------------+-----");
 			PERFORMANCE_STATISTICS_HEADER_LINE = sb.toString();
 		}
@@ -148,17 +142,9 @@ public class ReasonerUtilities {
 			sb.append(LINE_SEPARATOR).append("== --- start");
 			sb.append(getPerformanceStatisticsHeaderLine());
 			sb.append(LINE_SEPARATOR);
-			switch (Conf.getReasonerVersion()) {
-			case 1:
-				sb.append("|   No. of   |   No. of   |   Time used on  |   Time used on  |   Time used on  |   Time used on  |  Time used on   |    Total time   | Max. Memory |");
-				sb.append(LINE_SEPARATOR);
-				sb.append("|    Rules   |  Literals  |  loading theory | transform theory| remove defeater | rmv superiority |    reasoning    |       used      |     used    | filename");
-				break;
-			default:
-				sb.append("|   No. of   |   No. of   |   Time used on  |   Time used on  |   Time used on  |  Time used on   |    Total time   | Max. Memory |");
-				sb.append(LINE_SEPARATOR);
-				sb.append("|    Rules   |  Literals  |  loading theory | transform theory| remove defeater |    reasoning    |       used      |     used    | filename");
-			}
+			sb.append("|   No. of   |   No. of   |   Time used on  |   Time used on  |   Time used on  |   Time used on  |  Time used on   |    Total time   | Max. Memory |");
+			sb.append(LINE_SEPARATOR);
+			sb.append("|    Rules   |  Literals  |  loading theory | transform theory| remove defeater | rmv superiority |    reasoning    |       used      |     used    | filename");
 			sb.append(getPerformanceStatisticsHeaderLine());
 			sb.append(LINE_SEPARATOR);
 			sb.append("{2}");
@@ -182,41 +168,24 @@ public class ReasonerUtilities {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			PrintStream writer = new PrintStream(baos);
 
-			switch (Conf.getReasonerVersion()) {
-			case 1:
-				for (PerformanceStatistic rp : performanceStatistics) {
-					writer.append(LINE_SEPARATOR);
-					writer.printf(
-							"| %10d | %10d | %11.3f sec | %11.3f sec | %11.3f sec | %11.3f sec | %11.3f sec | %11.3f sec | %8.2f MB | %s", //
-							rp.getNoOfRules(), rp.getNoOfLiterals(),//
-							.001 * rp.getLoadTheoryTimeUsed(), //
-							.001 * rp.getNormalFormTransformationTimeUsed(), //
-							.001 * rp.getDefeaterRemovalTimeUsed(),//
-							.001 * rp.getSuperiorityRemovalTimeUsed(), //
-							.001 * rp.getReasoningTimeUsed(), //
-							.001 * rp.getTotalTimeUsed(), //
-							1.0 * rp.getMaxMemoryUsed() / 1024 / 1024,//
-							rp.getUrl().toString());
-				}
-				break;
-			default:
-				for (PerformanceStatistic rp : performanceStatistics) {
-					writer.append(LINE_SEPARATOR);
-					writer.printf("| %10d | %10d | %11.3f sec | %11.3f sec | %11.3f sec | %11.3f sec | %11.3f sec | %8.2f MB | %s", //
-							rp.getNoOfRules(), rp.getNoOfLiterals(),//
-							.001 * rp.getLoadTheoryTimeUsed(), //
-							.001 * rp.getNormalFormTransformationTimeUsed(), //
-							.001 * rp.getDefeaterRemovalTimeUsed(),//
-							.001 * rp.getReasoningTimeUsed(), //
-							.001 * rp.getTotalTimeUsed(), //
-							1.0 * rp.getMaxMemoryUsed() / 1024 / 1024,//
-							rp.getUrl().toString());
-				}
+			for (PerformanceStatistic rp : performanceStatistics) {
+				writer.append(LINE_SEPARATOR);
+				writer.printf(
+						"| %10d | %10d | %11.3f sec | %11.3f sec | %11.3f sec | %11.3f sec | %11.3f sec | %11.3f sec | %8.2f MB | %s", //
+						rp.getNoOfRules(), rp.getNoOfLiterals(),//
+						.001 * rp.getLoadTheoryTimeUsed(), //
+						.001 * rp.getNormalFormTransformationTimeUsed(), //
+						.001 * rp.getDefeaterRemovalTimeUsed(),//
+						.001 * rp.getSuperiorityRemovalTimeUsed(), //
+						.001 * rp.getReasoningTimeUsed(), //
+						.001 * rp.getTotalTimeUsed(), //
+						1.0 * rp.getMaxMemoryUsed() / 1024 / 1024,//
+						rp.getUrl().toString());
 			}
 			writer.flush();
 
-			Object[] args = { Converter.long2TimeString(IOManager.getConfigurationTimeUsed()), performanceStatistics.size(),
-					baos.toString() };
+			Object[] args = { Converter.long2TimeString(IOManager.getConfigurationTimeUsed()),
+					performanceStatistics.size(), baos.toString() };
 
 			try {
 				sb.append(TextUtilities.formatArguments(getPerformanceStatisticsTemplate(), args.length, args));
@@ -244,7 +213,8 @@ public class ReasonerUtilities {
 					filenames.add(new URL("file", "", file.getCanonicalPath()));
 				}
 			} else {
-				throw new IOException(Messages.getErrorMessage(ErrorMessage.IO_FILE_NOT_EXIST, new Object[] { filenameStr }));
+				throw new IOException(Messages.getErrorMessage(ErrorMessage.IO_FILE_NOT_EXIST,
+						new Object[] { filenameStr }));
 			}
 		} else {
 			filenames.add(uri.toURL());

@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -28,8 +28,7 @@ public class TemporalException extends TheoryException {
 	public TemporalException(String errorTag) {
 		this(errorTag, null);
 	}
-
-	public TemporalException(String errorTag, Object[] arguments) {
+	public TemporalException(String errorTag,Object[] arguments) {
 		super(errorTag, null, null, arguments);
 	}
 }

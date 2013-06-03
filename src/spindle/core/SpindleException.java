@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -39,15 +39,12 @@ public abstract class SpindleException extends Exception {
 
 	protected final static String getMessage(Class<?> caller, String errorTag, String message, Object... arguments) {
 		StringBuilder sb = new StringBuilder();
-		if (null != caller) {
-			String classname = caller.getName();
-			sb.append(classname).append(": ");
-		}
+		if (null != caller) sb.append(caller.getClass().getName()).append(": ");
 		if (null != errorTag) sb.append(Messages.getErrorMessage(errorTag, arguments));
 		if (null != message) sb.append(sb.length() == 0 ? "" : ": ").append(message);
 		return sb.toString();
 	}
-
+	
 	protected final static Object[] rearrangeArguments(String str, Object... arguments) {
 		if (null == str) return arguments;
 		if (null == arguments) return new Object[] { str };

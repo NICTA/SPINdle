@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -30,7 +30,7 @@ import java.util.logging.Level;
 
 import javax.script.ScriptEngine;
 
-import com.app.utils.ComparableEntry;
+import com.app.utils.Entry;
 
 import spindle.core.MessageType;
 import spindle.core.dom.AppConstants;
@@ -67,7 +67,6 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 
 	Map<LiteralVariable, LiteralVariable> simplifiedLiteralVariables = null;
 	Map<LiteralVariable, String> literalFunctionAnswers = null;
-	Map<LiteralVariable,Literal>literalVariablesUpdate=null;
 	Set<Rule> rulesToAdd = null;
 
 	public Theory evaluateLiteralVariables(Theory theory) throws LiteralVariablesEvaluatorException {
@@ -78,7 +77,6 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 
 		simplifiedLiteralVariables = new TreeMap<LiteralVariable, LiteralVariable>();
 		literalFunctionAnswers = new TreeMap<LiteralVariable, String>();
-		literalVariablesUpdate=new TreeMap<LiteralVariable, Literal>();
 		rulesToAdd = new TreeSet<Rule>();
 
 		simplifyLiteralVariables();
@@ -97,21 +95,19 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 		}
 		if (!AppConst.isDeploy) {
 			for (java.util.Map.Entry<LiteralVariable, String> entry : literalFunctionAnswers.entrySet()) {
-				logMessage(Level.INFO, 1, "* literalFunctionAnswers.entry:- ", entry);
+				logMessage(Level.INFO, 1, "literalFunctionAnswers.entry:- ", entry);
 			}
 		}
-
+		// if (null != explanationLogger) {
+		// for (java.util.Map.Entry<LiteralVariable, String> entry : literalFunctionAnswers.entrySet()) {
+		// explanationLogger.addLiteralBooleanFunctionResult(entry.getKey(), entry.getValue());
+		// }
+		// }
 		theory.clearLiteralBooleanFunctions();
 
 		try {
-			for (java.util.Map.Entry<LiteralVariable,Literal>entry:literalVariablesUpdate.entrySet()){
-				LiteralVariable lv=entry.getKey();
-				Literal l=entry.getValue();
-				logMessage(Level.FINER, 1, "update literal variable to regular literal:", lv, " => ", l);
-				this.theory.updateLiteralVariableInRule(lv,l);
-			}
 			for (Rule rule : rulesToAdd) {
-				logMessage(Level.FINER, 1, "add new rule to theory:", rule);
+				logMessage(Level.FINER, 1, "LiteralVariableEvaluator.rulesToAdd:- ", rule);
 				this.theory.addRule(rule);
 			}
 		} catch (TheoryException e) {
@@ -119,6 +115,7 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 		}
 
 		logMessage(Level.FINE, 0, "LiteralVariableEvaluator.evaluateLiteralVariables - end");
+
 		return this.theory;
 	}
 
@@ -152,11 +149,11 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 		if (theory.getLiteralVariableCount() == 0) return;
 
 		// simplify the literal variable values using application constants
-		Map<LiteralVariable, ComparableEntry<LiteralVariable, Set<LiteralVariable>>> literalVariables = new TreeMap<LiteralVariable, ComparableEntry<LiteralVariable, Set<LiteralVariable>>>();
+		Map<LiteralVariable, Entry<LiteralVariable, Set<LiteralVariable>>> literalVariables = new TreeMap<LiteralVariable, Entry<LiteralVariable, Set<LiteralVariable>>>();
 		for (java.util.Map.Entry<LiteralVariable, LiteralVariable> entry : theory.getLiteralVariables().entrySet()) {
 			Set<LiteralVariable> lvEncountered = new TreeSet<LiteralVariable>();
 			lvEncountered.add(entry.getValue());
-			ComparableEntry<LiteralVariable, Set<LiteralVariable>> entryRecord = new ComparableEntry<LiteralVariable, Set<LiteralVariable>>(entry.getValue(), lvEncountered);
+			Entry<LiteralVariable, Set<LiteralVariable>> entryRecord = new Entry<LiteralVariable, Set<LiteralVariable>>(entry.getValue(), lvEncountered);
 			literalVariables.put(entry.getKey(), entryRecord);
 		}
 		Map<LiteralVariable, LiteralVariable> updateSet = new TreeMap<LiteralVariable, LiteralVariable>();
@@ -165,7 +162,7 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 		do {
 			updateSet.clear();
 			removeSet.clear();
-			for (java.util.Map.Entry<LiteralVariable, ComparableEntry<LiteralVariable, Set<LiteralVariable>>> entry : literalVariables.entrySet()) {
+			for (java.util.Map.Entry<LiteralVariable, Entry<LiteralVariable, Set<LiteralVariable>>> entry : literalVariables.entrySet()) {
 				logMessage(Level.FINER, 1, "evaluating: ", entry);
 				LiteralVariable lvValue = entry.getValue().getKey();
 				if (null != isUserDefinedVariable(lvValue)) {
@@ -186,7 +183,7 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 			}
 
 			for (java.util.Map.Entry<LiteralVariable, LiteralVariable> entry : updateSet.entrySet()) {
-				ComparableEntry<LiteralVariable, Set<LiteralVariable>> lvEntry = literalVariables.get(entry.getKey());
+				Entry<LiteralVariable, Set<LiteralVariable>> lvEntry = literalVariables.get(entry.getKey());
 				Set<LiteralVariable> historySet = lvEntry.getValue();
 				if (historySet.contains(entry.getValue())) {
 					historySet.add(entry.getKey());
@@ -221,8 +218,7 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 	private void simplifyTheoryBooleanFunctions(Map<LiteralVariable, LiteralVariable> theoryBooleanFunctions) throws LiteralVariablesEvaluatorException {
 		if (theoryBooleanFunctions.size() == 0) return;
 
-		Set<LiteralVariable>literalVariablesToRemove=new TreeSet<LiteralVariable>();
-		Map<LiteralVariable, ComparableEntry<LiteralVariable, Set<LiteralVariable>>> theoryBooleanFunctionsToEvaluate = new TreeMap<LiteralVariable, ComparableEntry<LiteralVariable, Set<LiteralVariable>>>();
+		Map<LiteralVariable, Entry<LiteralVariable, Set<LiteralVariable>>> theoryBooleanFunctionsToEvaluate = new TreeMap<LiteralVariable, Entry<LiteralVariable, Set<LiteralVariable>>>();
 		try {
 			for (java.util.Map.Entry<LiteralVariable, LiteralVariable> entry : theoryBooleanFunctions.entrySet()) {
 				String theoryBooleanFunctionStr = entry.getValue().getName();
@@ -232,16 +228,15 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 					boolean ans = evaluateBooleanValue(theoryBooleanFunctionStr);
 					literalFunctionAnswers.put(entry.getKey(), "" + ans);
 					addBooleanConclusionGenerated(entry.getKey(), ans);
-					literalVariablesToRemove.add(entry.getKey());
 				} else {
-					theoryBooleanFunctionsToEvaluate.put(entry.getKey(), new ComparableEntry<LiteralVariable, Set<LiteralVariable>>(entry.getValue(), userVariableSet));
+					theoryBooleanFunctionsToEvaluate.put(entry.getKey(), new Entry<LiteralVariable, Set<LiteralVariable>>(entry.getValue(), userVariableSet));
 				}
 			}
 
 			Set<LiteralVariable> updatedSet = new TreeSet<LiteralVariable>();
 			do {
 				updatedSet.clear();
-				for (java.util.Map.Entry<LiteralVariable, ComparableEntry<LiteralVariable, Set<LiteralVariable>>> entry : theoryBooleanFunctionsToEvaluate.entrySet()) {
+				for (java.util.Map.Entry<LiteralVariable, Entry<LiteralVariable, Set<LiteralVariable>>> entry : theoryBooleanFunctionsToEvaluate.entrySet()) {
 					Set<LiteralVariable> missingLiteralVariables = entry.getValue().getValue();
 					Set<LiteralVariable> removeSet = new TreeSet<LiteralVariable>();
 					for (LiteralVariable literalVariable : missingLiteralVariables) {
@@ -253,13 +248,12 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 						literalFunctionAnswers.put(entry.getKey(), "" + ans);
 						addBooleanConclusionGenerated(entry.getKey(), ans);
 						updatedSet.add(entry.getKey());
-						literalVariablesToRemove.add(entry.getKey());
 					}
 				}
 				for (LiteralVariable literalVariable : updatedSet) {
 					theoryBooleanFunctionsToEvaluate.remove(literalVariable);
 				}
-			} while (updatedSet.size() > 0);			
+			} while (updatedSet.size() > 0);
 		} catch (LiteralVariablesEvaluatorException e) {
 			throw e;
 		} catch (Exception e) {
@@ -267,20 +261,16 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 		}
 	}
 
-	private void addBooleanConclusionGenerated(LiteralVariable literalVariable, boolean ans) throws TheoryException {
+	private void addBooleanConclusionGenerated(LiteralVariable literalVariable, boolean ans) {
 		logMessage(Level.FINE, 1, "literal variable: ", literalVariable, ", ans=", ans);
-		
-		Literal headLiteral = DomUtilities.getLiteral(literalVariable);
-		headLiteral.setPlaceHolder(true);
-		
-		literalVariablesUpdate.put(literalVariable, headLiteral);
-	
 		if (ans) {
 			try {
 				Rule newRule = DomUtilities.getRule(theory.getUniqueRuleLabel(), RuleType.FACT);
+				Literal headLiteral = DomUtilities.getLiteral(literalVariable);// new Literal(literalVariable);
+				headLiteral.setPlaceHolder(true);
 				newRule.addHeadLiteral(headLiteral);
 				rulesToAdd.add(newRule);
-				logMessage(Level.FINER, 2, "generate new fact:", newRule);
+				logMessage(Level.FINER, 2, "new rule generated: ", newRule);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -22,19 +22,16 @@
 package spindle.engine.mdl;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.logging.Level;
 
 import spindle.core.dom.Conclusion;
 import spindle.core.dom.ConclusionType;
 import spindle.core.dom.Literal;
 import spindle.core.dom.Mode;
-import spindle.core.dom.Rule;
 import spindle.core.dom.RuleType;
 import spindle.engine.ReasoningEngineException;
 import spindle.engine.sdl.SdlReasoningEngine2;
@@ -46,7 +43,7 @@ import spindle.tools.explanation.RuleInferenceStatus;
  * 
  * @author H.-P. Lam (oleklam@gmail.com), National ICT Australia - Queensland Research Laboratory
  * @since version 1.0.0
- * @version Last modified 2012.09.29
+ * @version Last modified 2012.08.20
  */
 public class MdlReasoningEngine2 extends SdlReasoningEngine2 {
 	protected Map<String, Set<String>> strongerModeSet = null;
@@ -61,9 +58,8 @@ public class MdlReasoningEngine2 extends SdlReasoningEngine2 {
 		super.initialize();
 	}
 
-	protected Set<Literal> getConflictLiteralListWithoutOperatorChange(final Literal literal) {
-System.out.println("-- MdlReasoningEngine2.getConflictLiteralListWithoutOperatorChange("+literal+")"); 
-		Set<Literal> conflictLiteralList = new TreeSet<Literal>();
+	protected List<Literal> getConflictLiteralListWithoutOperatorChange(final Literal literal) {
+		List<Literal> conflictLiteralList = new ArrayList<Literal>();
 
 		conflictLiteralList.add(literal.getComplementClone());
 
@@ -78,33 +74,24 @@ System.out.println("-- MdlReasoningEngine2.getConflictLiteralListWithoutOperator
 	}
 
 	// remove ambiguity caused by complementary literal
-	protected void removeComplementaryLiteralAmbiguity(int i) throws ReasoningEngineException {
-System.out.println("-- MdlReasoningEngine2.removeComplementLiteralAmbiguity("+i+")");		
+	protected void removeComplementLiteralAmbiguity(int i) {
 		logMessage(Level.FINE, 1, "=== removeComplementLiteralAmbiguity - start ===");
-		List<Conclusion> ambiguousConclusionsToRemove = new ArrayList<Conclusion>();
-		removeComplementaryLiteralAmbiguity(ambiguousConclusions[i],ambiguousConclusionsToRemove);
+		List<Conclusion> ambiguousConclusionToRemove = new ArrayList<Conclusion>();
+		List<Conclusion> recordsToRemove = new ArrayList<Conclusion>();
 
-		for (Conclusion conclusion : ambiguousConclusionsToRemove) {
-			removeAmbiguousConclusion(conclusion);
-		}
-		// TODO remove record??
-		logMessage(Level.FINE, 1, "=== removeComplementLiteralAmbiguity -  end  ===");
-	}
+		for (Entry<Conclusion, Set<String>> entry : ambiguousConclusions[i].entrySet()) {
+			Conclusion conclusion = entry.getKey();
+			Set<String> ruleLabels = entry.getValue();
 
-	protected void removeComplementaryLiteralAmbiguity(Map<Conclusion,Set<String>>ambiguousConclusions,List<Conclusion>ambiguousConclusionsToRemove){
-		for (Entry<Conclusion,Set<String>>entry:ambiguousConclusions.entrySet()){
-			Conclusion conclusion=entry.getKey();
-			Set<String>ruleLabels=entry.getValue();
-			
-			Literal literal=conclusion.getLiteral();
-			Set<Literal>conflictLiterals=getConflictLiteralListWithoutOperatorChange(literal);
-			
+			Literal literal = conclusion.getLiteral();
+			List<Literal> conflictLiterals = getConflictLiteralListWithoutOperatorChange(literal);
 			switch (conclusion.getConclusionType()) {
 			case DEFINITE_PROVABLE:
 				logMessage(Level.FINEST, 2, "removeComplementLiteralAmbiguity, check literal (definite): ", literal);
 				if (!containsUnprovedRuleInTheory(conflictLiterals, RuleType.STRICT)) {
 					if (isAmbiguousConclusionExist(conflictLiterals, ConclusionType.DEFINITE_PROVABLE)) {
-						ambiguousConclusionsToRemove.add(conclusion);
+						ambiguousConclusionToRemove.add(conclusion);
+						recordsToRemove.add(new Conclusion(ConclusionType.DEFINITE_PROVABLE, literal));
 						if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
 								RuleType.STRICT, ConclusionType.DEFINITE_NOT_PROVABLE, literal,
 								RuleInferenceStatus.DEFEATED);
@@ -116,7 +103,8 @@ System.out.println("-- MdlReasoningEngine2.removeComplementLiteralAmbiguity("+i+
 				logMessage(Level.FINEST, 2, "removeComplementLiteralAmbiguity, check literal (defeasible): ", literal);
 				if (!containsUnprovedRuleInTheory(conflictLiterals, RuleType.DEFEASIBLE)) {
 					if (isAmbiguousConclusionExist(conflictLiterals, ConclusionType.DEFEASIBLY_PROVABLE)) {
-						ambiguousConclusionsToRemove.add(conclusion);
+						ambiguousConclusionToRemove.add(conclusion);
+						recordsToRemove.add(new Conclusion(ConclusionType.DEFEASIBLY_PROVABLE, literal));
 						if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
 								RuleType.DEFEASIBLE, ConclusionType.DEFEASIBLY_NOT_PROVABLE, literal,
 								RuleInferenceStatus.DEFEATED);
@@ -126,223 +114,119 @@ System.out.println("-- MdlReasoningEngine2.removeComplementLiteralAmbiguity("+i+
 				break;
 			default:
 			}
-		}		
+		}
+
+		for (Conclusion conclusion : ambiguousConclusionToRemove) {
+			ambiguousConclusions[i].remove(conclusion);
+		}
+		for (Conclusion record : recordsToRemove) {
+			removeRecord(record);
+		}
+		logMessage(Level.FINE, 1, "=== removeComplementLiteralAmbiguity -  end  ===");
 	}
-		
-	
 
 	@Override
-	protected void updateAmbiguousConclusions(int i) throws ReasoningEngineException {
-		System.out.println("-- MdlReasoningEngine2.updateAmbiguousConclusions(" + i + ")");
+	protected void updateAmbiguousConclusions(int i) {
 		if (ambiguousConclusions[i].size() == 0) return;
-		logMessage(Level.FINE, 0, "-- MdlReasoningEngine2.updateAmbiguousConclusions - start, i=", i);
+		logMessage(Level.FINE, 0, "MdlReasoningEngine2.updateAmbiguousConclusions - start, i=", i);
 		if (!AppConst.isDeploy) printEngineStatus("updateAmbiguousConclusions-before");
-
-		// remove ambiguity due to complementary literals
-		removeComplementaryLiteralAmbiguity(i);
 
 		List<Conclusion> ambiguousConclusionToRemove = new ArrayList<Conclusion>();
 		List<Conclusion> recordsToRemove = new ArrayList<Conclusion>();
 
-		RuleType ruleType = null;
-		ConclusionType negativeConclusionType = null;
+		// remove ambiguity caused by complementary literals
+		removeComplementLiteralAmbiguity(i);
 
+		// remove ambiguity based on modal operator strength
 		for (Entry<Conclusion, Set<String>> entry : ambiguousConclusions[i].entrySet()) {
 			Conclusion conclusion = entry.getKey();
 			Set<String> ruleLabels = entry.getValue();
 
 			Literal literal = conclusion.getLiteral();
-			ConclusionType conclusionType = conclusion.getConclusionType();
-
-			switch (conclusionType) {
+			List<Literal> conflictLiterals = getConflictLiterals(literal);
+			switch (conclusion.getConclusionType()) {
 			case DEFINITE_PROVABLE:
-				ruleType = RuleType.STRICT;
-				negativeConclusionType = ConclusionType.DEFINITE_NOT_PROVABLE;
+				logMessage(Level.FINER, 1, "updateAmbiguousConclusion [MDL], check literal (definite): ", literal);
+				boolean chk1 = containsUnprovedRuleInTheory(conflictLiterals, RuleType.STRICT);
+				if (!chk1) {
+					boolean chk2 = isRecordExist(conflictLiterals, ConclusionType.DEFINITE_PROVABLE);
+					int conflictLiteralExistCount = 0;
+					int strongModeCount = 0;
+					if (chk2) {
+						for (Literal conflictLiteral : conflictLiterals) {
+							if (isRecordExist(conflictLiteral, ConclusionType.DEFINITE_PROVABLE)) {
+								conflictLiteralExistCount++;
+								if (hasStrongerMode(literal, conflictLiteral)) {
+									logMessage(Level.FINEST, 2, null, literal, " hasStrongerMode: ", conflictLiteral);
+									strongModeCount++;
+								}
+							}
+						}
+
+						// only conclusion with strongest modal operator is concluded
+						if (strongModeCount == conflictLiteralExistCount) {
+							addPendingConclusion(new Conclusion(ConclusionType.DEFINITE_PROVABLE, literal));
+							ambiguousConclusionToRemove.add(conclusion);
+							if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
+									conclusion, RuleInferenceStatus.APPICABLE);
+						} else {
+							recordsToRemove.add(new Conclusion(ConclusionType.DEFINITE_PROVABLE, literal));
+							Conclusion negConclusion = new Conclusion(ConclusionType.DEFEASIBLY_NOT_PROVABLE, literal);
+							addPendingConclusion(negConclusion);
+							ambiguousConclusionToRemove.add(conclusion);
+							if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
+									negConclusion, RuleInferenceStatus.DEFEATED);
+						}
+					} else {
+						addPendingConclusion(new Conclusion(ConclusionType.DEFINITE_PROVABLE, literal));
+						ambiguousConclusionToRemove.add(conclusion);
+						if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
+								conclusion, RuleInferenceStatus.APPICABLE);
+					}
+				}
 				break;
 			case DEFEASIBLY_PROVABLE:
-				ruleType = RuleType.DEFEASIBLE;
-				negativeConclusionType = ConclusionType.DEFEASIBLY_NOT_PROVABLE;
+				logMessage(Level.FINER, 1, "updateAmbiguousConclusion [MDL], check literal (defeasible): ", literal);
+				boolean dchk1 = containsUnprovedRuleInTheory(conflictLiterals, RuleType.DEFEASIBLE);
+				if (!dchk1) {
+					boolean dchk2 = isRecordExist(conflictLiterals, ConclusionType.DEFEASIBLY_PROVABLE);
+					if (dchk2) {
+						int conflictLiteralExistCount = 0;
+						int strongModeCount = 0;
+						for (Literal conflictLiteral : conflictLiterals) {
+							if (isRecordExist(conflictLiteral, ConclusionType.DEFEASIBLY_PROVABLE)) {
+								conflictLiteralExistCount++;
+								if (hasStrongerMode(literal, conflictLiteral)) {
+									logMessage(Level.FINEST, 2, null, literal, " hasStrongerMode: ", conflictLiteral);
+									strongModeCount++;
+								}
+							}
+						}
+
+						// only conclusion with strongest modal operator is concluded
+						if (strongModeCount == conflictLiteralExistCount) {
+							addPendingConclusion(new Conclusion(ConclusionType.DEFEASIBLY_PROVABLE, literal));
+							ambiguousConclusionToRemove.add(conclusion);
+							if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
+									conclusion, RuleInferenceStatus.APPICABLE);
+						} else {
+							recordsToRemove.add(new Conclusion(ConclusionType.DEFEASIBLY_PROVABLE, literal));
+							ambiguousConclusionToRemove.add(conclusion);
+							Conclusion negConclusion = new Conclusion(ConclusionType.DEFEASIBLY_NOT_PROVABLE, literal);
+							addPendingConclusion(negConclusion);
+							if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
+									negConclusion, RuleInferenceStatus.DEFEATED);
+						}
+					} else {
+						addPendingConclusion(new Conclusion(ConclusionType.DEFEASIBLY_PROVABLE, literal));
+						ambiguousConclusionToRemove.add(conclusion);
+						if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
+								conclusion, RuleInferenceStatus.APPICABLE);
+					}
+				}
 				break;
 			default:
 			}
-
-			Set<Rule> rulesWithLiteralAsHead = theory.getRulesWithHead(literal);
-			boolean keepLiteralInAmbiguousSet = false;
-			for (Rule r : rulesWithLiteralAsHead) {
-				if (!ruleType.equals(r.getRuleType())) continue;
-				for (Literal bodyLiteral : r.getBodyLiterals()) {
-					if (bodyLiteral.isPlaceHolder()) keepLiteralInAmbiguousSet = true;
-				}
-			}
-
-			Set<Literal> conflictLiterals = getConflictLiterals(literal);
-			boolean conflictLiteralInSccGroup = false;
-			for (Literal conflictLiteral : conflictLiterals) {
-				if (null != getSccGroup(conflictLiteral)) conflictLiteralInSccGroup = true;
-			}
-
-			boolean chk = isRecordExist(conflictLiterals, conclusionType);
-
-			if (keepLiteralInAmbiguousSet) {
-				// defer the removal of literal until all rules generated
-				// by the superiority removal process have been evaluated
-				logMessage(Level.FINER, 2, "keep literal in ambiguous set temporary");
-				conclusionType = null;
-			} else if (!containsUnprovedRuleInTheory(conflictLiterals, ruleType)) {
-				ambiguousConclusionToRemove.add(conclusion);
-				if (chk) {
-					// mdl modification - start
-					// remove ambiguity based on modal operator strength
-					conclusionType = evaluateAmbiguousConclusionsByModality(literal, conclusionType, conflictLiterals);
-
-					if (conclusionType.isPositiveConclusion()) {
-						// literal with strongest modal operator find
-						// positive conclusion => conclusion type unchanged
-						if (isLogInferenceProcess)
-							getInferenceLogger().updateRuleInferenceStatus(ruleLabels, conclusion, RuleInferenceStatus.APPICABLE);
-					} else {
-						// literal is not with strongest modal operator
-						// defeated conclusion => remove record from the records set
-						recordsToRemove.add(conclusion);
-						if (isLogInferenceProcess)
-							getInferenceLogger().updateRuleInferenceStatus(ruleLabels, ruleType, negativeConclusionType, literal,
-									RuleInferenceStatus.DEFEATED);
-					}
-					// mdl modification - end
-				} else {
-					if (isLogInferenceProcess)
-						getInferenceLogger().updateRuleInferenceStatus(ruleLabels, conclusion, RuleInferenceStatus.APPICABLE);
-					// literal with no ambiguous conclusion find
-					// positive conclusion => conclusion type unchanged
-				}
-			} else if (conflictLiteralInSccGroup && chk) {
-				ambiguousConclusionToRemove.add(conclusion);
-				recordsToRemove.add(conclusion);
-				if (isLogInferenceProcess)
-					getInferenceLogger().updateRuleInferenceStatus(ruleLabels, conclusion, RuleInferenceStatus.DISCARDED);
-				// literal with conflict that appear in the SCC set
-				// negative conclusion => change conclusion type to negative
-				conclusionType = negativeConclusionType;
-			}
-
-			if (null == conclusionType) continue;
-
-			// generate new conclusion based on the conclusion type derived above
-			generateConclusionsWithLiteral(conclusionType, literal, true);
-			
-			// ============ commented on 2012.12.12 - start
-//			switch (conclusion.getConclusionType()) {
-//			case DEFINITE_PROVABLE:
-//				logMessage(Level.FINER, 1, "updateAmbiguousConclusion [MDL], check literal (definite): ", literal);
-//				for (Rule r:rulesWithLiteralAsHead){
-//					if (!RuleType.STRICT.equals(r.getRuleType()))continue;
-//					for (Literal bodyLiteral:r.getBodyLiterals()){
-//						if (bodyLiteral.isPlaceHolder())keepLiteralInAmbiguousSet=true;
-//					}
-//				}
-//				
-//				boolean chk2 = isRecordExist(conflictLiterals, ConclusionType.DEFINITE_PROVABLE);
-//
-//				if (keepLiteralInAmbiguousSet){
-//					// defer the removal of literal until all rules generated
-//					// by the superiority removal process have been evaluated
-//					logMessage(Level.FINER, 2, "keep literal in ambiguous set temporary");
-//				} else if (!containsUnprovedRuleInTheory(conflictLiterals, RuleType.STRICT)) {
-//					if (chk2) {
-//						ambiguousConclusionToRemove.add(conclusion);
-//
-//						int conflictLiteralExistCount = 0;
-//						int strongModeCount = 0;
-//						for (Literal conflictLiteral : conflictLiterals) {
-//							if (isRecordExist(conflictLiteral, ConclusionType.DEFINITE_PROVABLE)) {
-//								conflictLiteralExistCount++;
-//								if (hasStrongerMode(literal, conflictLiteral)) {
-//									logMessage(Level.FINEST, 2, null, literal, " hasStrongerMode: ", conflictLiteral);
-//									strongModeCount++;
-//								}
-//							}
-//						}
-//
-//						// only conclusion with strongest modal operator is concluded
-//						if (strongModeCount == conflictLiteralExistCount) {
-//							if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
-//									conclusion, RuleInferenceStatus.APPICABLE);
-//							newLiteralFind_definiteProvable(literal,true);
-//						} else {
-//							recordsToRemove.add(conclusion);
-//							if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,RuleType.STRICT,
-//									ConclusionType.DEFINITE_NOT_PROVABLE,literal, RuleInferenceStatus.DEFEATED);
-//							newLiteralFind_definiteNotProvable(literal,true);
-//						}
-//					} else {
-//						if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
-//								conclusion, RuleInferenceStatus.APPICABLE);
-//						newLiteralFind_definiteProvable(literal,true);
-//					}
-//				} else if (conflictLiteralInSccGroup && chk2){
-//					ambiguousConclusionToRemove.add(conclusion);
-//					recordsToRemove.add(conclusion);
-//					if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
-//							conclusion, RuleInferenceStatus.DISCARDED);
-//					newLiteralFind_defeasiblyNotProvable(literal,true);
-//				}
-//				break;
-//			case DEFEASIBLY_PROVABLE:
-//				logMessage(Level.FINER, 1, "updateAmbiguousConclusion [MDL], check literal (defeasible): ", literal);
-//				for (Rule r:rulesWithLiteralAsHead){
-//					if (!RuleType.DEFEASIBLE.equals(r.getRuleType()))continue;
-//					for (Literal bodyLiteral:r.getBodyLiterals()){
-//						if (bodyLiteral.isPlaceHolder())keepLiteralInAmbiguousSet=true;
-//					}
-//				}
-//				boolean dchk2 = isRecordExist(conflictLiterals, ConclusionType.DEFEASIBLY_PROVABLE);
-//				
-//				if (keepLiteralInAmbiguousSet){
-//					// defer the removal of literal until all rules generated
-//					// by the superiority removal process have been evaluated
-//					logMessage(Level.FINER, 2, "keep literal in ambiguous set temporary");
-//				} else if (!containsUnprovedRuleInTheory(conflictLiterals, RuleType.DEFEASIBLE)) {
-//					ambiguousConclusionToRemove.add(conclusion);
-//					if (dchk2) {
-//						int conflictLiteralExistCount = 0;
-//						int strongModeCount = 0;
-//						for (Literal conflictLiteral : conflictLiterals) {
-//							if (isRecordExist(conflictLiteral, ConclusionType.DEFEASIBLY_PROVABLE)) {
-//								conflictLiteralExistCount++;
-//								if (hasStrongerMode(literal, conflictLiteral)) {
-//									logMessage(Level.FINEST, 2, null, literal, " hasStrongerMode: ", conflictLiteral);
-//									strongModeCount++;
-//								}
-//							}
-//						}
-//
-//						// only conclusion with strongest modal operator is concluded
-//						if (strongModeCount == conflictLiteralExistCount) {
-//							if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
-//									conclusion, RuleInferenceStatus.APPICABLE);
-//							newLiteralFind_defeasiblyProvable(literal,true);
-//						} else {
-//							recordsToRemove.add(conclusion);
-//							if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,RuleType.DEFEASIBLE,
-//									ConclusionType.DEFEASIBLY_NOT_PROVABLE,literal, RuleInferenceStatus.DEFEATED);
-//							newLiteralFind_defeasiblyNotProvable(literal,true);
-//						}
-//					} else {
-//						if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
-//								conclusion, RuleInferenceStatus.APPICABLE);
-//						newLiteralFind_defeasiblyProvable(literal,true);
-//					}
-//				} else if (conflictLiteralInSccGroup && dchk2){
-//					ambiguousConclusionToRemove.add(conclusion);
-//					recordsToRemove.add(conclusion);
-//					if (isLogInferenceProcess) getInferenceLogger().updateRuleInferenceStatus(ruleLabels,
-//							conclusion, RuleInferenceStatus.DISCARDED);
-//					newLiteralFind_defeasiblyNotProvable(literal,true);
-//				}
-//				break;
-//			default:
-//			}
-			// ============ commented on 2012.12.12 - end
 		}
 
 		for (Conclusion conclusion : ambiguousConclusionToRemove) {
@@ -354,49 +238,10 @@ System.out.println("-- MdlReasoningEngine2.removeComplementLiteralAmbiguity("+i+
 		}
 
 		if (!AppConst.isDeploy) printEngineStatus("updateAmbiguousConclusions-after");
-		logMessage(Level.FINE, 0, "-- MdlReasoningEngine2.updateAmbiguousConclusions - end, i=", i);
+		logMessage(Level.FINE, 0, "MdlReasoningEngine2.updateAmbiguousConclusions - end, i=", i);
 	}
 
-	protected ConclusionType evaluateAmbiguousConclusionsByModality(Literal literal, ConclusionType conclusionType, //
-			Collection<Literal> conflictLiterals) throws ReasoningEngineException {
-		// no need to perform literal modal operators comparisons if the conclusion type is already negative
-		if (conclusionType.isNegativeConclusion()) return conclusionType;
-
-		// count the number of conflict modal literals that appear in the records 
-		// and the number of literals weaker than the prescribed literal
-		int conflictLiteralExistCount = 0;
-		int strongModeCount = 0;		
-		for (Literal conflictLiteral : conflictLiterals) {
-			if (isRecordExist(conflictLiteral, conclusionType)) {
-				conflictLiteralExistCount++;
-				if (hasStrongerMode(literal, conflictLiteral)) {
-					logMessage(Level.FINEST, 2, null, literal, " hasStrongerMode: ", conflictLiteral);
-					strongModeCount++;
-				}
-			}
-		}
-
-		// only conclusion with strongest modality is positively concluded
-		if (strongModeCount == conflictLiteralExistCount) {
-			// literal with strongest modal operator find
-			// positive conclusion => conclusion type unchanged
-			return conclusionType;
-		} else {
-			// literal does not with strongest modality
-			// defeated conclusion => change conclusion type to negative
-			switch (conclusionType) {
-			case DEFINITE_PROVABLE:
-				return ConclusionType.DEFINITE_NOT_PROVABLE;
-			case DEFEASIBLY_PROVABLE:
-				return ConclusionType.DEFEASIBLY_NOT_PROVABLE;
-			default:
-				throw new ReasoningEngineException(getClass(), "unknown conclusion type: " + conclusionType);
-			}
-		}
-	}
-	
-	protected boolean hasStrongerMode(Literal literal, Literal conflictLiteral) {
-//System.out.println("-- MdlReasoningEngine2.hasStrongerMode("+literal+","+conflictLiteral+")");		
+	private boolean hasStrongerMode(Literal literal, Literal conflictLiteral) {
 		Mode m1 = literal.getMode();
 		Mode m2 = conflictLiteral.getMode();
 
