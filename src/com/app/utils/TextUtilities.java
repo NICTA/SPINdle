@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -285,8 +285,8 @@ public class TextUtilities {
 		return v;
 	}
 
-	public static List<NameValuePair<CharType, String>> extractStringTokens(final String str, boolean removeWhiteSpace) {
-		List<NameValuePair<CharType, String>> tokens = new ArrayList<NameValuePair<CharType, String>>();
+	public static List<Entry<CharType, String>> extractStringTokens(final String str, boolean removeWhiteSpace) {
+		List<Entry<CharType, String>> tokens = new ArrayList<Entry<CharType, String>>();
 
 		if (null == str || "".equals(str.trim())) return tokens;
 		String s = (removeWhiteSpace) ? str.replaceAll("\\s", "") : str.replaceAll(ESCAPE_CHARACTERS, "").trim();
@@ -317,12 +317,12 @@ public class TextUtilities {
 			if (charType == lastCharType) {
 				token += c;
 			} else {
-				tokens.add(new NameValuePair<CharType, String>(lastCharType, token));
+				tokens.add(new Entry<CharType, String>(lastCharType, token));
 				token = "" + c;
 			}
 		}
 
-		if (!"".equals(token)) tokens.add(new NameValuePair<CharType, String>(charType, token));
+		if (!"".equals(token)) tokens.add(new Entry<CharType, String>(charType, token));
 
 		return tokens;
 	}

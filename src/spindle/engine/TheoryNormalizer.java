@@ -1,5 +1,5 @@
 /**
- * SPINdle (version 2.2.2)
+ * SPINdle (version 2.2.0)
  * Copyright (C) 2009-2012 NICTA Ltd.
  *
  * This file is part of SPINdle project.
@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.logging.Level;
 
 import com.app.utils.Utilities.ProcessStatus;
 
@@ -45,7 +44,6 @@ import spindle.sys.AppModuleBase;
 import spindle.sys.AppModuleListener;
 import spindle.sys.Messages;
 import spindle.sys.message.ErrorMessage;
-import spindle.sys.message.SystemMessage;
 
 /**
  * Base class for Theory normalizer.
@@ -93,7 +91,6 @@ public abstract class TheoryNormalizer extends AppModuleBase {
 	 */
 	public ProcessStatus transformTheoryToRegularForm() throws TheoryNormalizerException {
 		if (factsAndRules == null) throw new TheoryNormalizerException(getClass(), ErrorMessage.THEORY_NULL_THEORY);
-		logMessage(Level.FINE, 0, Messages.getSystemMessage(SystemMessage.THEORY_NORMALIZER_REGULAR_FORM_TRANSFORMATION));
 		transformTheoryToRegularFormImpl();
 		return ProcessStatus.SUCCESS;
 	}
@@ -337,8 +334,7 @@ newRule2.setOriginalLabel(originalRuleLabel);
 		Map<String, List<Rule>> oldNewRuleMapping = new Hashtable<String, List<Rule>>();
 		List<Rule> newRules;
 		List<Rule> newRuleMapping = null;
-		
-		try {
+
 		for (Rule rule : factsAndRules.values()) {
 			newRuleMapping = null;
 			switch (rule.getRuleType()) {
@@ -350,8 +346,8 @@ newRule2.setOriginalLabel(originalRuleLabel);
 				newRuleMapping = newRules;
 				break;
 			case DEFEASIBLE:
-				if (rule.getHeadLiterals().size() > 1) throw new TheoryException(ErrorMessage.THEORY_NOT_IN_REGULAR_FORM_MULTIPLE_HEADS_RULE,new Object[]{rule.getLabel()});
-//						Messages.getErrorMessage(ErrorMessage.THEORY_NOT_IN_REGULAR_FORM_MULTIPLE_HEADS));
+				if (rule.getHeadLiterals().size() > 1) throw new TheoryNormalizerException(getClass(),
+						Messages.getErrorMessage(ErrorMessage.THEORY_NOT_IN_REGULAR_FORM_MULTIPLE_HEADS));
 
 				newRules = removeDefeater_transformRule(rule);
 
@@ -368,7 +364,8 @@ newRule2.setOriginalLabel(originalRuleLabel);
 			}
 			if (newRuleMapping != null) oldNewRuleMapping.put(rule.getLabel(), newRuleMapping);
 		}
-	
+
+		try {
 			theory.updateTheory(rulesToAdd, rulesToDelete, oldNewRuleMapping);
 		} catch (TheoryException e) {
 			throw new TheoryNormalizerException(getClass(), ErrorMessage.TRANSFORMATION_DEFEATER_REMOVAL_ERROR,
@@ -477,14 +474,11 @@ newRule3.setOriginalLabel(originalRuleLabel);
 		removeAppModuleListener(listener);
 	}
 
-	protected void fireTheoryNormalizerMessage(MessageType messageType,String messageTag, Object... args) {
-		if (hasAppModuleListeners()){
-			String message=Messages.getSystemMessage(messageTag, args);
+	protected void fireTheoryNormalizerMessage(MessageType messageType, String message) {
 		for (AppModuleListener listener : getAppModuleListeners()) {
 			if (listener instanceof TheoryNormalizerListener) {
-				((TheoryNormalizerListener) listener).onTheoryNormalizerMessage(messageType,message);
+				((TheoryNormalizerListener) listener).onTheoryNormalizerMessage(messageType, message);
 			}
-		}
 		}
 	}
 
