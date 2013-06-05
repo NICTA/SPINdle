@@ -1,6 +1,6 @@
 /**
  * SPINdle (version 2.2.2)
- * Copyright (C) 2009-2012 NICTA Ltd.
+ * Copyright (C) 2009-2013 NICTA Ltd.
  *
  * This file is part of SPINdle project.
  * 
@@ -40,7 +40,7 @@ public interface AppConst {
 
 	String APP_TITLE = "SPINdle";
 	String APP_VERSION = "2.2.2";
-	String APP_COPYRIGHT_MESSAGE = "Copyright (C) 2009-2012 NICTA Ltd.\n" //
+	String APP_COPYRIGHT_MESSAGE = "Copyright (C) 2009-2013 NICTA Ltd.\n" //
 			+ "This software and its documentation is distributed under the terms of the\n"//
 			+ "FSF Lesser GNU Public License (LGPL).\n"//
 			+ "\n"//

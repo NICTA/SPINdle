@@ -1,6 +1,6 @@
 /**
  * SPINdle (version 2.2.2)
- * Copyright (C) 2009-2012 NICTA Ltd.
+ * Copyright (C) 2009-2013 NICTA Ltd.
  *
  * This file is part of SPINdle project.
  * 

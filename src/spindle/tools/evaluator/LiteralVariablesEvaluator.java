@@ -1,6 +1,6 @@
 /**
  * SPINdle (version 2.2.2)
- * Copyright (C) 2009-2012 NICTA Ltd.
+ * Copyright (C) 2009-2013 NICTA Ltd.
  *
  * This file is part of SPINdle project.
  * 
@@ -67,7 +67,7 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 
 	Map<LiteralVariable, LiteralVariable> simplifiedLiteralVariables = null;
 	Map<LiteralVariable, String> literalFunctionAnswers = null;
-	Map<LiteralVariable,Literal>literalVariablesUpdate=null;
+	Map<LiteralVariable, Literal> literalVariablesUpdate = null;
 	Set<Rule> rulesToAdd = null;
 
 	public Theory evaluateLiteralVariables(Theory theory) throws LiteralVariablesEvaluatorException {
@@ -78,7 +78,7 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 
 		simplifiedLiteralVariables = new TreeMap<LiteralVariable, LiteralVariable>();
 		literalFunctionAnswers = new TreeMap<LiteralVariable, String>();
-		literalVariablesUpdate=new TreeMap<LiteralVariable, Literal>();
+		literalVariablesUpdate = new TreeMap<LiteralVariable, Literal>();
 		rulesToAdd = new TreeSet<Rule>();
 
 		simplifyLiteralVariables();
@@ -104,11 +104,11 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 		theory.clearLiteralBooleanFunctions();
 
 		try {
-			for (java.util.Map.Entry<LiteralVariable,Literal>entry:literalVariablesUpdate.entrySet()){
-				LiteralVariable lv=entry.getKey();
-				Literal l=entry.getValue();
+			for (java.util.Map.Entry<LiteralVariable, Literal> entry : literalVariablesUpdate.entrySet()) {
+				LiteralVariable lv = entry.getKey();
+				Literal l = entry.getValue();
 				logMessage(Level.FINER, 1, "update literal variable to regular literal:", lv, " => ", l);
-				this.theory.updateLiteralVariableInRule(lv,l);
+				this.theory.updateLiteralVariableInRule(lv, l);
 			}
 			for (Rule rule : rulesToAdd) {
 				logMessage(Level.FINER, 1, "add new rule to theory:", rule);
@@ -156,7 +156,8 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 		for (java.util.Map.Entry<LiteralVariable, LiteralVariable> entry : theory.getLiteralVariables().entrySet()) {
 			Set<LiteralVariable> lvEncountered = new TreeSet<LiteralVariable>();
 			lvEncountered.add(entry.getValue());
-			ComparableEntry<LiteralVariable, Set<LiteralVariable>> entryRecord = new ComparableEntry<LiteralVariable, Set<LiteralVariable>>(entry.getValue(), lvEncountered);
+			ComparableEntry<LiteralVariable, Set<LiteralVariable>> entryRecord = new ComparableEntry<LiteralVariable, Set<LiteralVariable>>(
+					entry.getValue(), lvEncountered);
 			literalVariables.put(entry.getKey(), entryRecord);
 		}
 		Map<LiteralVariable, LiteralVariable> updateSet = new TreeMap<LiteralVariable, LiteralVariable>();
@@ -165,7 +166,8 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 		do {
 			updateSet.clear();
 			removeSet.clear();
-			for (java.util.Map.Entry<LiteralVariable, ComparableEntry<LiteralVariable, Set<LiteralVariable>>> entry : literalVariables.entrySet()) {
+			for (java.util.Map.Entry<LiteralVariable, ComparableEntry<LiteralVariable, Set<LiteralVariable>>> entry : literalVariables
+					.entrySet()) {
 				logMessage(Level.FINER, 1, "evaluating: ", entry);
 				LiteralVariable lvValue = entry.getValue().getKey();
 				if (null != isUserDefinedVariable(lvValue)) {
@@ -218,10 +220,11 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 		}
 	}
 
-	private void simplifyTheoryBooleanFunctions(Map<LiteralVariable, LiteralVariable> theoryBooleanFunctions) throws LiteralVariablesEvaluatorException {
+	private void simplifyTheoryBooleanFunctions(Map<LiteralVariable, LiteralVariable> theoryBooleanFunctions)
+			throws LiteralVariablesEvaluatorException {
 		if (theoryBooleanFunctions.size() == 0) return;
 
-		Set<LiteralVariable>literalVariablesToRemove=new TreeSet<LiteralVariable>();
+		Set<LiteralVariable> literalVariablesToRemove = new TreeSet<LiteralVariable>();
 		Map<LiteralVariable, ComparableEntry<LiteralVariable, Set<LiteralVariable>>> theoryBooleanFunctionsToEvaluate = new TreeMap<LiteralVariable, ComparableEntry<LiteralVariable, Set<LiteralVariable>>>();
 		try {
 			for (java.util.Map.Entry<LiteralVariable, LiteralVariable> entry : theoryBooleanFunctions.entrySet()) {
@@ -229,19 +232,24 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 
 				Set<LiteralVariable> userVariableSet = extractUserLiteralVariablesFromBooleanFunction(theoryBooleanFunctionStr);
 				if (userVariableSet.size() == 0) {
-					boolean ans = evaluateBooleanValue(theoryBooleanFunctionStr);
+					Object ans = evaluateBooleanValue(theoryBooleanFunctionStr);
 					literalFunctionAnswers.put(entry.getKey(), "" + ans);
-					addBooleanConclusionGenerated(entry.getKey(), ans);
+					if (ans instanceof Boolean) addBooleanConclusionGenerated(entry.getKey(), (Boolean) ans);
+					// boolean ans = evaluateBooleanValue(theoryBooleanFunctionStr);
+					// literalFunctionAnswers.put(entry.getKey(), "" + ans);
+					// addBooleanConclusionGenerated(entry.getKey(), ans);
 					literalVariablesToRemove.add(entry.getKey());
 				} else {
-					theoryBooleanFunctionsToEvaluate.put(entry.getKey(), new ComparableEntry<LiteralVariable, Set<LiteralVariable>>(entry.getValue(), userVariableSet));
+					theoryBooleanFunctionsToEvaluate.put(entry.getKey(),
+							new ComparableEntry<LiteralVariable, Set<LiteralVariable>>(entry.getValue(), userVariableSet));
 				}
 			}
 
 			Set<LiteralVariable> updatedSet = new TreeSet<LiteralVariable>();
 			do {
 				updatedSet.clear();
-				for (java.util.Map.Entry<LiteralVariable, ComparableEntry<LiteralVariable, Set<LiteralVariable>>> entry : theoryBooleanFunctionsToEvaluate.entrySet()) {
+				for (java.util.Map.Entry<LiteralVariable, ComparableEntry<LiteralVariable, Set<LiteralVariable>>> entry : theoryBooleanFunctionsToEvaluate
+						.entrySet()) {
 					Set<LiteralVariable> missingLiteralVariables = entry.getValue().getValue();
 					Set<LiteralVariable> removeSet = new TreeSet<LiteralVariable>();
 					for (LiteralVariable literalVariable : missingLiteralVariables) {
@@ -249,9 +257,12 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 					}
 					missingLiteralVariables.removeAll(removeSet);
 					if (missingLiteralVariables.size() == 0) {
-						boolean ans = evaluateBooleanValue(entry.getValue().getKey().getName());
+						Object ans = evaluateBooleanValue(entry.getValue().getKey().getName());
 						literalFunctionAnswers.put(entry.getKey(), "" + ans);
-						addBooleanConclusionGenerated(entry.getKey(), ans);
+						if (ans instanceof Boolean) addBooleanConclusionGenerated(entry.getKey(), (Boolean) ans);
+						// boolean ans = evaluateBooleanValue(entry.getValue().getKey().getName());
+						// literalFunctionAnswers.put(entry.getKey(), "" + ans);
+						// addBooleanConclusionGenerated(entry.getKey(), ans);
 						updatedSet.add(entry.getKey());
 						literalVariablesToRemove.add(entry.getKey());
 					}
@@ -259,7 +270,7 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 				for (LiteralVariable literalVariable : updatedSet) {
 					theoryBooleanFunctionsToEvaluate.remove(literalVariable);
 				}
-			} while (updatedSet.size() > 0);			
+			} while (updatedSet.size() > 0);
 		} catch (LiteralVariablesEvaluatorException e) {
 			throw e;
 		} catch (Exception e) {
@@ -269,12 +280,12 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 
 	private void addBooleanConclusionGenerated(LiteralVariable literalVariable, boolean ans) throws TheoryException {
 		logMessage(Level.FINE, 1, "literal variable: ", literalVariable, ", ans=", ans);
-		
+
 		Literal headLiteral = DomUtilities.getLiteral(literalVariable);
 		headLiteral.setPlaceHolder(true);
-		
+
 		literalVariablesUpdate.put(literalVariable, headLiteral);
-	
+
 		if (ans) {
 			try {
 				Rule newRule = DomUtilities.getRule(theory.getUniqueRuleLabel(), RuleType.FACT);
@@ -287,11 +298,13 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 		}
 	}
 
-	private Set<LiteralVariable> extractUserLiteralVariablesFromBooleanFunction(final String literalVariableStr) throws LiteralVariablesEvaluatorException {
+	private Set<LiteralVariable> extractUserLiteralVariablesFromBooleanFunction(final String literalVariableStr)
+			throws LiteralVariablesEvaluatorException {
 		Set<LiteralVariable> userLiteralVariables = new TreeSet<LiteralVariable>();
 		if (null == literalVariableStr || "".equals(literalVariableStr.trim())) return userLiteralVariables;
 		try {
-			List<String> tokens = DflTheoryParser2.getTokenizeLiteralFunction(literalVariableStr, simplifiedLiteralVariables, literalFunctionAnswers);
+			List<String> tokens = DflTheoryParser2.getTokenizeLiteralFunction(literalVariableStr, simplifiedLiteralVariables,
+					literalFunctionAnswers);
 			for (String token : tokens) {
 				LiteralVariable literalVariable = isUserDefinedVariable(token);
 				if (null != literalVariable) userLiteralVariables.add(literalVariable);
@@ -330,37 +343,39 @@ public class LiteralVariablesEvaluator extends AppModuleBase {
 		return literalVariable;
 	}
 
-	private boolean evaluateBooleanValue(String str) throws ValueEvaluationException {
+	private Object evaluateBooleanValue(String str) throws ValueEvaluationException {
 		try {
 			String s = DflTheoryParser2.getLiteralFunctionEvaluationString(str, simplifiedLiteralVariables, literalFunctionAnswers);
 			s = s.substring(1, s.length() - 1);
 			Object res = evaluator.eval(s);
-			if (res instanceof Boolean) {
-				return (Boolean) res;
-			} else throw new ValueEvaluationException(ErrorMessage.LITERAL_VARIABLE_EVALUATOR_IMPROPER_RESULT_TYPE, new Object[] { "Boolean",
-					getResultType(res) });
+			return res;
+			// if (res instanceof Boolean) {
+			// return (Boolean) res;
+			// } else throw new ValueEvaluationException(ErrorMessage.LITERAL_VARIABLE_EVALUATOR_IMPROPER_RESULT_TYPE,
+			// new Object[] { "Boolean",
+			// getResultType(res) });
 		} catch (Exception e) {
 			throw new ValueEvaluationException(e);
 		}
 	}
 
-	private String getResultType(Object res) {
-		if (res instanceof Boolean) {
-			return "Boolean";
-		} else if (res instanceof Long) {
-			return "Long";
-		} else if (res instanceof Integer) {
-			return "Integer";
-		} else if (res instanceof Double) {
-			return "Double";
-		} else if (res instanceof Float) { return "Float"; }
-		return res.getClass().getName();
-	}
+	// private String getResultType(Object res) {
+	// if (res instanceof Boolean) {
+	// return "Boolean";
+	// } else if (res instanceof Long) {
+	// return "Long";
+	// } else if (res instanceof Integer) {
+	// return "Integer";
+	// } else if (res instanceof Double) {
+	// return "Double";
+	// } else if (res instanceof Float) { return "Float"; }
+	// return res.getClass().getName();
+	// }
 
-//	@SuppressWarnings("unused")
-//	private void removeLiteralVariable() {
-//
-//	}
+	// @SuppressWarnings("unused")
+	// private void removeLiteralVariable() {
+	//
+	// }
 
 	public Theory getTheory() {
 		return theory;
